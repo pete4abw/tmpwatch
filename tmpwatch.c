@@ -15,6 +15,7 @@
 
 #ifndef __hpux
 #include <getopt.h>
+#include <paths.h>
 #endif
 
 #include <stdarg.h>
@@ -28,7 +29,6 @@
 #include <sys/wait.h>
 #include <utime.h>
 #include <unistd.h>
-#include <paths.h>
 #include <mntent.h>
 
 #define LOG_REALDEBUG	1
@@ -325,6 +325,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    if (*significant_time >= killTime)
 		continue;
 
+#ifndef __hpux
 	    /* check if it is an ext3 journal file */
 	    if ((strcmp(ent->d_name, ".journal") == 0) &&
 		(sb.st_uid == 0)) {
@@ -353,7 +354,8 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		    continue;
 		}
 	    }
-	    
+#endif
+
 	    if ((flags & FLAG_ALLFILES) ||
 		S_ISREG(sb.st_mode) ||
 		S_ISLNK(sb.st_mode)) {
