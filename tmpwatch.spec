@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
 Version: 2.8.4
-Release: 2
+Release: 5
 Source: %{name}-%{version}.tar.gz
 License: GPL
 Group: System Environment/Base
@@ -48,8 +48,20 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/cron.daily/tmpwatch
 
 %changelog
+* Mon Feb 10 2003 Nalin Dahyabhai <nalin@redhat.com> 2.8.4-5
+- rebuild
+
 * Fri Feb  7 2003 Nalin Dahyabhai <nalin@redhat.com> 2.8.4-2
 - rebuild
+
+* Tue Oct  8 2002 Mike A. Harris <mharris@redhat.com> 2.8.4-4
+- All-arch rebuild
+
+* Fri Jun 21 2002 Tim Powers <timp@redhat.com>
+- automated rebuild
+
+* Sun May 26 2002 Tim Powers <timp@redhat.com>
+- automated rebuild
 
 * Tue May 21 2002 Mike A. Harris <mharris@redhat.com> 2.8.4-1
 - Bump release and rebuild in new environment
