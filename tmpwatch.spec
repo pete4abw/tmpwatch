@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
 Version: 2.8.1
-Release: 0.7.x
+Release: 1
 Source: %{name}-%{version}.tar.gz
 License: GPL
 Group: System Environment/Base
