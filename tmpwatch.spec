@@ -49,9 +49,8 @@ rm -rf $RPM_BUILD_ROOT
 make PREFIX=$RPM_BUILD_ROOT install
 
 mkdir -p $RPM_BUILD_ROOT/etc/cron.daily
-echo > $RPM_BUILD_ROOT/etc/cron.daily/tmpwatch <<EOF
-/usr/sbin/tmpwatch 240 /tmp /var/tmp /var/catman/cat?
-<<EOF
+echo '/usr/sbin/tmpwatch 240 /tmp /var/tmp /var/catman/cat?' \
+	> $RPM_BUILD_ROOT/etc/cron.daily/tmpwatch
 
 %clean
 rm -rf $RPM_BUILD_ROOT
