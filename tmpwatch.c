@@ -92,6 +92,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
     struct dirent * ent;
     struct stat sb;
     int status, pid;
+    struct stat here;
 
     message(LOG_DEBUG, "cleaning up directory %s\n", dirname);
 
@@ -104,6 +105,12 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
     if (!(pid = fork())) {
 	if (safe_chdir(dirname)) return 1;
 	dir = opendir(".");
+
+	if (lstat(".", &here)) {
+	    message(LOG_ERROR, "error statting current directory %s: %s",
+		    dirname, strerror(errno));
+	    exit(1);
+	}
 
 	if (!dir) {
 	    message(LOG_ERROR, "error opening directory %s: %s\n", dirname,
@@ -138,9 +145,11 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 		message(LOG_DEBUG, "non-writeable file owned by root "
 			"skipped: %s\n", ent->d_name);;
 		continue;
-	    }
-
-	    if (S_ISDIR(sb.st_mode)) {
+	    } else if (sb.st_dev != here.st_dev) {
+		message(LOG_VERBOSE, "file on different device skipped: %s\n",
+			ent->d_name);
+		continue;
+	    } else if (S_ISDIR(sb.st_mode)) {
 		cleanupDirectory(ent->d_name, killTime, flags);
 
 		if (sb.st_atime >= killTime) continue;
