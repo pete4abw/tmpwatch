@@ -43,12 +43,6 @@ void message(int level, char * format, ...) {
       where = stderr;
       fprintf(stderr, "error: ");
     }
-    if (! S_ISDIR(sb1.st_mode)) {
-	message(LOG_ERROR, "directory %s changed right under us!!!",
-		dirname);
-	message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
-	return 1;
-    }
 
     vfprintf(stdout, format, args);
 
@@ -62,6 +56,13 @@ int safe_chdir(char * dirname) {
   if (lstat(dirname, &sb1)) {
     message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
 	    dirname, strerror(errno));
+    return 1;
+  }
+
+  if (! S_ISDIR(sb1.st_mode)) {
+    message(LOG_ERROR, "directory %s changed right under us!!!",
+	    dirname);
+    message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
     return 1;
   }
 
