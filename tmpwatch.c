@@ -102,13 +102,20 @@ int safe_chdir(char * dirname) {
 int check_fuser(const char *dirname, const char *filename)
 {
     int ret;
-    char cmd[255];
-    snprintf(cmd, 255, "/sbin/fuser -s \"%s/%s\" > /dev/null 2>&1",
-	     dirname, filename);
-    ret = system(cmd);
+    char dir[255];
+    int pid;
+    extern int errno;
 
-    // flip flop
-    return (ret == 0);
+    snprintf(dir, sizeof(dir), "%s/%s", dirname, filename);
+    pid = fork();
+    if (pid == 0) {
+    	ret = execle("/sbin/fuser", "/sbin/fuser", "-s", dir, NULL);
+    } else {
+	waitpid(pid, &ret, 0);
+    }
+
+    /* flip-flop: fuser returns zero if the device or file is being accessed */
+    return (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0));
 }
 
 int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
@@ -220,8 +227,8 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
       if (*significant_time >= killTime)
         continue;
 
-      if (flags & FLAGS_FUSER &&
-	  !access("/sbin/fuser", R_OK|X_OK) &&
+      if ((flags & FLAGS_FUSER) &&
+	  (access("/sbin/fuser", R_OK | X_OK) == 0) &&
 	  check_fuser(dirname, ent->d_name)) {
         message(LOG_VERBOSE, "file is already in use or open: %s\n",
 	        ent->d_name);

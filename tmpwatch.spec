@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.6.1
+Version: 2.6.2
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
@@ -47,6 +47,10 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Tue Sep 12 2000 Nalin Dahyabhai <nalin@redhat.com>
+- use execle() instead of system() to get the correct return code, fixes from
+  Jeremy Katz <katzj@linuxpower.org>
+
 * Thu Sep  7 2000 Nalin Dahyabhai <nalin@redhat.com>
 - rework to not have to fork() (#17286)
 - set utime() after we're done reading a directory
