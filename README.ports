@@ -1,0 +1,4 @@
+tmpwatch should compile using GCC and GNU make on HP-UX 11.00 or later and
+Solaris 2.5.1 or later.
+
+Paul Gear <paulgear@bigfoot.com>, <citecpdg@citec.qld.gov.au>
