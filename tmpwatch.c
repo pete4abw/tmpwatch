@@ -28,23 +28,14 @@ int logLevel = LOG_NORMAL;
 
 void message(int level, char * format, ...) {
     va_list args;
-    FILE * where = stderr;
+    FILE * where = stdout;
 
     if (level >= logLevel) {
 	va_start(args, format);
 
-	switch (level) {
-	    case LOG_DEBUG:
-		where = stdout;
-		break;
-
-	    case LOG_NORMAL:
-	    case LOG_VERBOSE:
-		where = stdout;
-		break;
-
-	    default:
-		fprintf(stderr, "error: ");
+	if (level > LOG_NORMAL) {
+	    where = stderr;
+	    fprintf(stderr, "error: ");
 	}
 
 	vfprintf(stdout, format, args);
@@ -239,11 +230,11 @@ int main(int argc, char ** argv) {
 	    flags |= FLAGS_FORCE;
 	    break;
 
-	  case 'v':
-	    logLevel ? logLevel -= 1 : 0;
-
 	  case GETOPT_TEST:
 	    flags |= FLAGS_TEST;
+	    /* fallthrough */
+	  case 'v':
+	    logLevel ? logLevel -= 1 : 0;
 	    break;
 
 	  case '?':
@@ -256,7 +247,7 @@ int main(int argc, char ** argv) {
 	exit(1);
     }
 
-    if (sscanf(argv[optind], "%d", &grace) != 1) {
+    if ((sscanf(argv[optind], "%d", &grace) != 1) || (grace < 0)) {
 	fprintf(stderr, "error: bad time argument %s\n", argv[optind]);
 	exit(1);
     }
@@ -284,7 +275,7 @@ int main(int argc, char ** argv) {
 	    message(LOG_DEBUG, "initial directory %s is a symlink -- "
 			"skipping\n", argv[optind]);
 	} else {
-	    cleanupDirectory(argv[optind], killTime, 0);
+	    cleanupDirectory(argv[optind], killTime, flags);
 	}
 
 	optind++;

@@ -15,6 +15,12 @@ haven't been accessed in a user-specified amount of time.
 
 %changelog
 
+* Tue Jan 13 1998 Erik Troan <ewt@redhat.com>
+
+- version 1.5
+- fixed flags passing
+- cleaned up message()
+
 * Wed Oct 22 1997 Erik Troan <ewt@redhat.com>
 
 - added man page to package
