@@ -1,10 +1,10 @@
-.TH TMPWATCH 8 "Mon Feb 14 2000"
+.TH TMPWATCH 8 "Mon May 05 2000"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
-\fBtmpwatch\fR [-u|-m] [-faqstv] [--verbose] [--force] [--all] [--test] 
-               [--fuser ] [--atime|--mtime] [--quiet] <hours> <dirs>
+\fBtmpwatch\fR [-u|-m|-c] [-faqstv] [--verbose] [--force] [--all] [--test] 
+               [--fuser ] [--atime|--mtime|--ctime] [--quiet] <hours> <dirs>
 
 .SH DESCRIPTION
 \fBtmpwatch\fR recursively removes files which haven't been accessed
@@ -17,10 +17,10 @@ not follow symbolic links in the directories it's cleaning (even if a
 symbolic link is given as its argument), will not switch filesystems,
  and only removes empty directories and regular files. 
 
-\fBtmpwatch\fR dates files by their atime, not their mtime. If
-files aren't being removed when \fBls -l\fR implies they should be, use
-\fBls -u\fR to examine their atime to see if that explains the
-problem.
+By default, \fBtmpwatch\fR dates files by their atime (access time), not
+their mtime (modification time). If files aren't being removed when
+\fBls -l\fR implies they should be, use \fBls -u\fR to examine their
+atime to see if that explains the problem.
 
 The \fIhours\fR parameter defines the threshold for removing files. If
 the file has not been accessed for \fIhours\fR hours, the file is removed.
@@ -31,13 +31,21 @@ to clean up.
 .TP
 \fB-u, -\-atime\fR
 Make the decision about deleting a file based on the file's atime
-(access time). This is the default. This option is incompatible with -\-mtime.
+(access time). This is the default. This option is incompatible with 
+-\-mtime and -\-ctime.
 
 .TP
 \fB-m, -\-mtime\fR
 Make the decision about deleting a file based on the file's mtime
 (modification time) instead of the atime. This option is incompatible
-with --atime.
+with -\-atime and -\-ctime.
+
+.TP
+\fB-c, -\-ctime\fR
+Make the decision about deleting a file based on the file's ctime
+(inode change time) instead of the atime; for directories, make the
+decision based on the mtime.  This option is incompatible with -\-atime
+and -\-mtime.
 
 .TP
 \fB-a, -\-all\fR

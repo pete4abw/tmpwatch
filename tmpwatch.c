@@ -1,6 +1,6 @@
 /*
  * tmpwatch.c -- remove files in a directory, but do it carefully.
- * Copyright (c) 1997, 1999 Red Hat Software, Inc.
+ * Copyright (c) 1997-2000, Red Hat, Inc.
  * Licensed under terms of the GPL.
  */
 
@@ -33,6 +33,7 @@
 #define FLAGS_ATIME     (1 << 3)
 #define FLAGS_MTIME     (1 << 4)
 #define FLAGS_FUSER     (1 << 5)
+#define FLAGS_CTIME     (1 << 6)
 
 int logLevel = LOG_NORMAL;
 
@@ -97,16 +98,30 @@ int safe_chdir(char * dirname) {
   return 0;
 }
 
-int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
+int check_fuser(const char *dirname, const char *filename)
+{
+    int ret;
+    char cmd[255];
+    snprintf(cmd, 255, "/sbin/fuser -s \"%s/%s\" > /dev/null 2>&1",
+	     dirname, filename);
+    ret = system(cmd);
+
+    // flip flop
+    if (ret == 0)
+	return 1;
+    else
+	return 0;
+}
+
+int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
+{
   DIR * dir;
   struct dirent * ent;
   struct stat sb;
   time_t *significant_time;
-  int status, pid, ret;
+  int status, pid;
   struct stat here;
   struct utimbuf utb;
-
-  char cmd[255];
 
   message(LOG_DEBUG, "cleaning up directory %s\n", dirname);
   
@@ -171,29 +186,24 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	significant_time = &sb.st_atime;
       else if (flags & FLAGS_MTIME)
 	significant_time = &sb.st_mtime;
+      else if (flags & FLAGS_CTIME) {
+	/* Even when we were told to use ctime, for directories we use
+	   mtime, because when a file in a directory is deleted, its
+	   ctime will change, and there's no way we can change it
+	   back.  Therefore, we use mtime rather than ctime so that
+	   directories won't hang around for along time after their
+	   contents are removed. */
+	if (S_ISDIR(sb.st_mode))
+	  significant_time = &sb.st_mtime;
+	else
+	  significant_time = &sb.st_ctime;
+      }
       /* What? One or the other should be set by now... */
       else {
 	message(LOG_FATAL, "error in cleanupDirectory: no selection method "
 	    "was specified\n");
       }
 
-      // do fuser check
-      ret = 0;
-      if (flags & FLAGS_FUSER) {
-	  if (!access("/sbin/fuser", R_OK|X_OK) &&
-	      ((flags & FLAGS_ALLFILES) || S_ISREG(sb.st_mode))) {
-	      snprintf(cmd, 255, "/sbin/fuser %s/%s > /dev/null 2>&1",
-		       dirname, ent->d_name);
-	      ret = system(cmd);
-	      
-	      // flip flop
-	      if (ret == 0)
-		  ret = 1;
-	      else
-		  ret = 0;
-	  }
-      }
-      
       if (!sb.st_uid && !(flags & FLAGS_FORCE) && 
 	  !(sb.st_mode & S_IWUSR)) {
 	message(LOG_DEBUG, "non-writeable file owned by root "
@@ -203,9 +213,6 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	message(LOG_VERBOSE, "file on different device skipped: %s\n",
 		ent->d_name);
 	continue;
-      } else if (ret) {
-	  message(LOG_VERBOSE, "file is already in use or open: %s\n",
-		  ent->d_name);
       } else if (S_ISDIR(sb.st_mode)) {
 
 	cleanupDirectory(ent->d_name, killTime, flags);
@@ -216,33 +223,47 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	utime(ent->d_name, &utb);
 	 
 	if (*significant_time >= killTime) continue;
-
-	if (flags & FLAGS_ALLFILES) {
-	    message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
-	    if (!(flags & FLAGS_TEST)) {
-		if (rmdir(ent->d_name)) {
-		    message(LOG_ERROR, "failed to rmdir %s: %s\n", 
-			    dirname, ent->d_name);
-		}
-	    } else {
-		rmdir(ent->d_name);
+	
+	if (flags & FLAGS_FUSER &&
+	    !access("/sbin/fuser", R_OK|X_OK) &&
+	    check_fuser(dirname, ent->d_name)) {
+	    message(LOG_VERBOSE, "file is already in use or open: %s\n",
+		    ent->d_name);
+	    continue;
+	}
+	
+	message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
+	if (!(flags & FLAGS_TEST)) {
+	    if (rmdir(ent->d_name)) {
+		message(LOG_ERROR, "failed to rmdir %s: %s\n", 
+			dirname, ent->d_name);
 	    }
+	} else {
+	    rmdir(ent->d_name);
 	}
       } else {
-	if (*significant_time >= killTime) continue;
-
-	if ((flags & FLAGS_ALLFILES) || S_ISREG(sb.st_mode)) {
-	  message(LOG_VERBOSE, "removing file %s/%s\n", 
-		  dirname, ent->d_name);
-
-	  if (!(flags & FLAGS_TEST)) {
-	    if (unlink(ent->d_name)) 
-	      message(LOG_ERROR, "failed to unlink %s: %s\n", 
+	  if (*significant_time >= killTime) continue;
+	  
+	  if ((flags & FLAGS_ALLFILES) ||
+	      (S_ISREG(sb.st_mode)) ||
+	      S_ISLNK(sb.st_mode)) {
+	      if (flags & FLAGS_FUSER && !access("/sbin/fuser", R_OK|X_OK) &&
+		  check_fuser(dirname, ent->d_name)) {
+		  message(LOG_VERBOSE, "file is already in use or open: %s\n",
+			  ent->d_name);
+		  continue;
+	      }
+	      
+	      message(LOG_VERBOSE, "removing file %s/%s\n", 
 		      dirname, ent->d_name);
+	      
+	      if (!(flags & FLAGS_TEST)) {
+		  if (unlink(ent->d_name)) 
+		      message(LOG_ERROR, "failed to unlink %s: %s\n", 
+			      dirname, ent->d_name);
+	      }
 	  }
-	}
       }
-
     } while (ent);
 
     if (closedir(dir) == -1) {
@@ -276,9 +297,9 @@ void usage(void) {
   printCopyright();
   fprintf(stderr, "\n");
 #ifndef __hpux
-  fprintf(stderr, "tmpwatch [-u|-m] [-afqtv] [--verbose] [--force] [--all] [--test] [--quiet] [--atime|--mtime] <hours-untouched> <dirs>\n");
+  fprintf(stderr, "tmpwatch [-u|-m|-c] [-afqtv] [--verbose] [--force] [--all] [--test] [--quiet] [--atime|--mtime|--ctime] <hours-untouched> <dirs>\n");
 #else
-  fprintf(stderr, "tmpwatch [-u|-m] [-afqtv] <hours-untouched> <dirs>\n");
+  fprintf(stderr, "tmpwatch [-u|-m|-c] [-afqtv] <hours-untouched> <dirs>\n");
 #endif
   exit(1);
 }
@@ -294,6 +315,7 @@ int main(int argc, char ** argv) {
     { "force", 0, 0, 'f' },
     { "mtime", 0, 0, 'm' },
     { "atime", 0, 0, 'u' },
+    { "ctime", 0, 0, 'c' },
     { "quiet", 0, 0, 'q' },
     { "fuser", 0, 0, 's' },
     { "test", 0, 0, 't' },
@@ -301,7 +323,7 @@ int main(int argc, char ** argv) {
     { 0, 0, 0, 0 }, 
   };
 #endif
-  const char optstring[] = "afmqstuv";
+  const char optstring[] = "acfmqstuv";
 
   if (argc == 1) usage();
 
@@ -342,19 +364,22 @@ int main(int argc, char ** argv) {
     case 'm':
       flags |= FLAGS_MTIME;
       break;
-
+    case 'c':
+	flags |= FLAGS_CTIME;
+	break;
     case '?':
       usage();
     }
   }
   
   /* atime and mtime options are mutually exclusive. - alh */
-  if ((flags & FLAGS_ATIME) && (flags & FLAGS_MTIME)) {
-    message(LOG_FATAL, "--atime and --mtime options are mutually exclusive\n");
+  if (!!(flags & FLAGS_ATIME) + !!(flags & FLAGS_MTIME) +
+      !!(flags & FLAGS_CTIME) > 1) {
+    message(LOG_FATAL, "--atime, --mtime, and --ctime options are mutually exclusive\n");
   }
   
   /* Default to atime if neither was specified. - alh */
-  if (!(flags & FLAGS_ATIME) && !(flags & FLAGS_MTIME))
+  if (!(flags & (FLAGS_ATIME | FLAGS_MTIME | FLAGS_CTIME)))
     flags |= FLAGS_ATIME;
 
   if (optind == argc) {
@@ -376,6 +401,9 @@ int main(int argc, char ** argv) {
 
   killTime = time(NULL) - grace;
 
+  /* set stdout line buffered so it is flushed before each fork */
+  setvbuf(stdout, NULL, _IOLBF, 0);
+      
   while (optind < argc) {
     if (lstat(argv[optind], &sb)) {
       message(LOG_ERROR, "lstat() of directory %s failed: %s\n",

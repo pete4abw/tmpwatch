@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.2
+Version: 2.3
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
@@ -44,6 +44,11 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Fri May 05 2000 Preston Brown <pbrown@redhat.com>
+- support for CTIME from jik@kamens.brookline.ma.us
+- fixes for fuser checks from Ian Burrell <iburrell@digital-integrity.com>.
+- remove directories when empty without --all flag, to be consistent w/docs.
+
 * Mon Feb 14 2000 Preston Brown <pbrown@redhat.com>
 - option to use fuser to see if file in use before removing
 
