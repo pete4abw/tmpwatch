@@ -1,20 +1,19 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-%define version 2.1
-Version: %{version}
-Release: 1
+Version: 2.1
+Release: 2
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
 BuildRoot: /var/tmp/%{name}-root
 
 %description
-The tmpwatch utility recursively searches through specified directories
-and removes files which have not been accessed in a specified period of
-time.  Tmpwatch is normally used to clean up directories which are used
-for temporarily holding files (for example, /tmp).  Tmpwatch ignores
-symlinks, won't switch filesystems and only removes empty directories
-and regular files.
+The tmpwatch utility recursively searches through specified
+directories and removes files which have not been accessed in a
+specified period of time.  Tmpwatch is normally used to clean up
+directories which are used for temporarily holding files (for example,
+/tmp).  Tmpwatch ignores symlinks, won't switch filesystems and only
+removes empty directories and regular files.
 
 %prep
 %setup -q
@@ -44,6 +43,9 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Wed Feb 02 2000 Cristian Gafton <gafton@redhat.com>
+- fix description
+
 * Tue Jan 18 2000 Preston Brown <pbrown@redhat.com>
 - null terminal opt struct (#7836)
 - test flag implies verbose (#2383)
