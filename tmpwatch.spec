@@ -48,6 +48,9 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/cron.daily/tmpwatch
 
 %changelog
+* Wed Aug 29 2001 Preston Brown <pbrown@redhat.com>
+- cron script fix (#52785)
+
 * Tue Aug 28 2001 Preston Brown <pbrown@redhat.com>
 - rebuild for 5.x, 6.x, 7.x errata
 
