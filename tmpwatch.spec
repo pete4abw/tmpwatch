@@ -24,31 +24,33 @@ make
 
 %install
 rm -rf %{buildroot}
-make PREFIX=%{buildroot} MANDIR=%{_mandir} install
+make PREFIX=%{buildroot} SBINDIR=%{_sbindir} MANDIR=%{_mandir} install
 
-( cd %{buildroot}
-  mkdir -p ./etc/cron.daily
-  echo '/usr/sbin/tmpwatch 240 /tmp' \
-	>> ./etc/cron.daily/tmpwatch
-  echo '/usr/sbin/tmpwatch 720 /var/tmp' \
-	>> ./etc/cron.daily/tmpwatch
-  echo 'for d in /var/{cache/man,catman}/{X11R6/cat?,cat?,local/cat?}; do
-    [ -d $d ] && /usr/sbin/tmpwatch -f 240 $d
-done' \
-	>> ./etc/cron.daily/tmpwatch
-  chmod +x ./etc/cron.daily/tmpwatch
-)
+mkdir -p %{buildroot}/etc/cron.daily
+cat > %{buildroot}/etc/cron.daily/tmpwatch <<EOF
+/usr/sbin/tmpwatch 240 /tmp
+/usr/sbin/tmpwatch 720 /var/tmp
+for d in /var/{cache/man,catman}/{cat?,X11R6/cat?,local/cat?}; do
+    if [ -d "$d" ]; then
+	/usr/sbin/tmpwatch -f 240 $d
+    fi
+done
+EOF
+chmod +x %{buildroot}/etc/cron.daily/tmpwatch
 
 %clean
 rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-/usr/sbin/tmpwatch
+%{_sbindir}/tmpwatch
 %{_mandir}/man8/tmpwatch.8*
-%config /etc/cron.daily/tmpwatch
+%config(noreplace) /etc/cron.daily/tmpwatch
 
 %changelog
+* Mon Aug 27 2001 Preston Brown <pbrown@redhat.com>
+- noreplace /etc/cron.daily/tmpwatch
+
 * Mon Aug  6 2001 Preston Brown <pbrown@redhat.com> 2.8-1
 - added a "nodirs" option which inhibits removal of empty directories.
 - Integrated race condition fixes from Martin Macok (#50148)

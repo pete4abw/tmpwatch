@@ -17,9 +17,9 @@ endif
 all: tmpwatch
 
 install: all
-	[ -d $(PREFIX)$(BASEDIR)/sbin ] || mkdir -p $(PREFIX)$(BASEDIR)/sbin
+	[ -d $(PREFIX)$(SBINDIR) ] || mkdir -p $(PREFIX)$(SBINDIR)
 	[ -d $(PREFIX)$(MANDIR)/man8 ] || mkdir -p $(PREFIX)$(MANDIR)/man8
-	$(INSTALL) -s -m 755 tmpwatch $(PREFIX)$(BASEDIR)/sbin/tmpwatch
+	$(INSTALL) -s -m 755 tmpwatch $(PREFIX)$(SBINDIR)/tmpwatch
 	$(INSTALL) -m 644 tmpwatch.8 $(PREFIX)$(MANDIR)/man8/tmpwatch.8
 
 clean:
