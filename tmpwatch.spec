@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
 Version: 2.6.2
-Release: 1.7
+Release: 2
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
@@ -28,7 +28,9 @@ make PREFIX=$RPM_BUILD_ROOT MANDIR=%{_mandir} install
 
 ( cd $RPM_BUILD_ROOT
   mkdir -p ./etc/cron.daily
-  echo '/usr/sbin/tmpwatch 240 /tmp /var/tmp' \
+  echo '/usr/sbin/tmpwatch 240 /tmp' \
+	>> ./etc/cron.daily/tmpwatch
+  echo '/usr/sbin/tmpwatch 720 /var/tmp' \
 	>> ./etc/cron.daily/tmpwatch
   echo '[ -d /var/cache/man ] && /usr/sbin/tmpwatch -f 240 /var/cache/man/{X11R6/cat?,cat?,local/cat?}' \
 	>> ./etc/cron.daily/tmpwatch
@@ -47,6 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Fri Jan 05 2001 Preston Brown <pbrown@redhat.com>
+- increased interval for removal to 30 days for /var/tmp per FHS (#19951)
+
 * Tue Sep 12 2000 Nalin Dahyabhai <nalin@redhat.com>
 - use execle() instead of system() to get the correct return code, fixes from
   Jeremy Katz <katzj@linuxpower.org>
