@@ -157,7 +157,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 		message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
 
 		if (!(flags & FLAGS_TEST)) {
-		    if (!(flags & FLAGS_ALLFILES)) {
+		    if (flags & FLAGS_ALLFILES) {
 			if (rmdir(ent->d_name)) {
 			    message(LOG_ERROR, "failed to rmdir %s: %s\n", 
 					dirname, ent->d_name);

@@ -1,10 +1,12 @@
 Summary: Cleans up files in directories based on their age
 Name: tmpwatch
-Version: 1.2
+%define version 1.3
+Version: %{version}
 Release: 1
-Source: tmpwatch-1.2.tar.gz
+Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: Utilities/System
+BuildRoot: /var/tmp/tmpwatch-root
 
 %description
 This package provides a program that can be used to clean out directories. It
@@ -12,6 +14,13 @@ recursively searches the directory (ignoring symlinks) and removes files that
 haven't been accessed in a user-specified amount of time.
 
 %changelog
+
+* Wed Oct 22 1997 Erik Troan <ewt@redhat.com>
+
+- added man page to package
+- uses a buildroot and %attr
+- fixed error message generation for directories
+- fixed flag propagation
 
 * Mon Mar 24 1997 Erik Troan <ewt@redhat.com>
 
@@ -30,7 +39,12 @@ how they ended up wrong).
 make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
 
 %install
-make install
+rm -rf $RPM_BUILD_ROOT
+make PREFIX=$RPM_BUILD_ROOT install
+
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %files
 /usr/sbin/tmpwatch
+/usr/man/man8/tmpwatch.8
