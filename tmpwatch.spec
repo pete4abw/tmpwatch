@@ -44,6 +44,10 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Mon Aug 30 1999 Preston Brown <pbrown@redhat.com>
+- skip lost+found directories
+- option to use file's atime instead of mtime (# 4178)
+
 * Mon Jun  7 1999 Jeff Johnson <jbj@redhat.com>
 - cleanup more man pages, this time adding in cvs (#224).
 

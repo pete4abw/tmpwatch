@@ -4,7 +4,7 @@
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
 \fBtmpwatch\fR [-favq] [--verbose] [--force] [--all] [--test] 
-               [--quiet] <hours> <dirs>
+               [--atime|--mtime] [--quiet] <hours> <dirs>
 
 .SH DESCRIPTION
 \fBtmpwatch\fR recursively removes files which haven't been accessed
@@ -28,6 +28,17 @@ Following this, one or more directories may be given for \fBtmpwatch\fR
 to clean up.
 
 .SH OPTIONS
+.TP
+\fB-\-atime\fR
+Make the decision about deleting a file based on the file's
+atime. This is the default. This option is incompatible with --mtime.
+
+.TP
+\fB-\-mtime\fR
+Make the decision about deleting a file based on the file's mtime
+(modification time) instead of the atime. This option is incompatible
+with --atime.
+
 .TP
 \fB-a, -\-all\fR
 Remove all file types, not just regular files and directories.

@@ -9,7 +9,7 @@ install:
 	[ -d $(PREFIX)/usr/sbin ] || mkdir -p $(PREFIX)/usr/sbin
 	[ -d $(PREFIX)/usr/man/man8 ] || mkdir -p $(PREFIX)/usr/man/man8
 	install -s -m 755 tmpwatch $(PREFIX)/usr/sbin/tmpwatch
-	install -s -m 644 tmpwatch.8 $(PREFIX)/usr/man/man8/tmpwatch.8
+	install -m 644 tmpwatch.8 $(PREFIX)/usr/man/man8/tmpwatch.8
 
 clean:
 	rm -f tmpwatch

@@ -27,8 +27,12 @@
 #define FLAGS_FORCE	(1 << 0)
 #define FLAGS_ALLFILES	(1 << 1)   /* normally just files, dirs are removed */
 #define FLAGS_TEST	(1 << 2)
+#define FLAGS_ATIME     (1 << 3)
+#define FLAGS_MTIME     (1 << 4)
 
 #define GETOPT_TEST	1000
+#define GETOPT_ATIME    1001
+#define GETOPT_MTIME    1002
 
 int logLevel = LOG_NORMAL;
 
@@ -52,6 +56,7 @@ void message(int level, char * format, ...) {
 
 int safe_chdir(char * dirname) {
   struct stat sb1, sb2;
+  time_t *significant_time;
 
   if (lstat(dirname, &sb1)) {
     message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
@@ -158,6 +163,19 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	continue;
       }
 
+      /* Set significant_time to point at the significant field of sb -
+       * either st_atime or st_mtime depending on the flag selected. - alh */
+      if (flags & FLAGS_ATIME)
+	significant_time = &sb.st_atime;
+      else if (flags & FLAGS_MTIME)
+	significant_time = &sb.st_mtime;
+      /* What? One or the other should be set by now... */
+      else {
+	fprintf(stderr, "error in cleanupDirectory: no selection method was "
+		"specified\n");
+	exit(1);
+      }
+
       if (!sb.st_uid && !(flags & FLAGS_FORCE) && 
 	  !(sb.st_mode & S_IWUSR)) {
 	message(LOG_DEBUG, "non-writeable file owned by root "
@@ -176,7 +194,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	utb.modtime = sb.st_mtime; /* mtime */
 	utime(ent->d_name, &utb);
 	 
-	if (sb.st_atime >= killTime) continue;
+	if (*significant_time >= killTime) continue;
 
 	message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
 
@@ -191,7 +209,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	  }
 	}
       } else {
-	if (sb.st_atime >= killTime) continue;
+	if (*significant_time >= killTime) continue;
 
 	if ((flags & FLAGS_ALLFILES) || S_ISREG(sb.st_mode)) {
 	  message(LOG_VERBOSE, "removing file %s/%s\n", 
@@ -236,7 +254,7 @@ void printCopyright(void) {
 void usage(void) {
   printCopyright();
   fprintf(stderr, "\n");
-  fprintf(stderr, "tmpwatch [-favq] [--verbose] [--force] [--all] [--test] [--quiet] <hours-untouched> <dirs>\n");
+  fprintf(stderr, "tmpwatch [-favq] [--verbose] [--force] [--all] [--test] [--quiet] [--atime|--mtime] <hours-untouched> <dirs>\n");
   exit(1);
 }
 
@@ -251,6 +269,8 @@ int main(int argc, char ** argv) {
     { "test", 0, 0, GETOPT_TEST },
     { "verbose", 0, 0, 'v' },
     { "quiet", 0, 0, 'q' },
+    { "atime", 0, 0, GETOPT_ATIME },
+    { "mtiem", 0, 0, GETOPT_MTIME },
   };
 
   if (argc == 1) usage();
@@ -280,10 +300,28 @@ int main(int argc, char ** argv) {
     case 'q':
       logLevel = LOG_FATAL;
       break;
+    case GETOPT_ATIME:
+      flags |= FLAGS_ATIME;
+      break;
+    case GETOPT_MTIME:
+      flags |= FLAGS_MTIME;
+      break;
+
     case '?':
       exit(1);
     }
   }
+  
+  /* atime and mtime options are mutually exclusive. - alh */
+  if ((flags & FLAGS_ATIME) && (flags & FLAGS_MTIME)) {
+    fprintf(stderr, "error: --atime and --mtime options are mutually "
+	    "exclusive\n");
+    exit(1);
+  }
+  
+  /* Default to atime if neither was specified. - alh */
+  if (!(flags & FLAGS_ATIME) && !(flags & FLAGS_MTIME))
+    flags |= FLAGS_ATIME;
 
   if (optind == argc) {
     fprintf(stderr, "error: time (in hours) must be given\n");
