@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 /* tmpwatch.c -- remove files in a directory, but do it carefully */
@@ -90,84 +91,97 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
     DIR * dir;
     struct dirent * ent;
     struct stat sb;
+    int status, pid;
 
     message(LOG_DEBUG, "cleaning up directory %s\n", dirname);
 
-    if (safe_chdir(dirname)) return 1;
-    dir = opendir(".");
+    /* do everything in a child process so we don't have to chdir(".."),
+       which would lead to a race condition. fork() on Linux is very efficient
+       so this shouldn't be a big deal (probably just a exception on one page
+       of stack, not bad) */
 
-    if (!dir) {
-	message(LOG_ERROR, "error opening directory %s: %s\n", dirname,
-		strerror(errno));
-	return 1;
-    }
+    if (!(pid = fork())) {
+	if (safe_chdir(dirname)) return 1;
+	dir = opendir(".");
 
-    do {
-	errno = 0;
-	ent = readdir(dir);
-	if (errno) {
-	    message(LOG_ERROR, "error reading directory entry: %s\n", 
+	if (!dir) {
+	    message(LOG_ERROR, "error opening directory %s: %s\n", dirname,
 		    strerror(errno));
-	    return 1;
-	}
-	if (!ent) break;
-
-	if ((ent->d_name[0] == '.' && (ent->d_name[1] == '\0' || 
-	    ((ent->d_name[1] == '.') && (ent->d_name[2] == '\0'))))) continue;
-
-	message(LOG_REALDEBUG, "found directory entry %s\n", ent->d_name);
-
-	if (lstat(ent->d_name, &sb)) {
-	    message(LOG_ERROR, "failed to lstat %s/%s: %s\n", dirname, 
-		    ent->d_name, strerror(errno));
-	    continue;
+	    exit(1);
 	}
 
-	if (!sb.st_uid && !(flags & FLAGS_FORCE) && !(sb.st_mode & S_IWUSR)) {
-	    message(LOG_DEBUG, "non-writeable file owned by root "
-		    "skipped: %s\n", ent->d_name);;
-	    continue;
-	}
-
-	if (S_ISDIR(sb.st_mode)) {
-	    cleanupDirectory(ent->d_name, killTime, flags);
-
-	    if (sb.st_atime >= killTime) continue;
-
-	    message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
-
-	    if (!(flags & FLAGS_TEST)) {
-		if (!(flags & FLAGS_ALLFILES)) {
-		    if (rmdir(ent->d_name)) {
-			message(LOG_ERROR, "failed to rmdir %s: %s", dirname,
-				    ent->d_name);
-		    }
-		} else {
-		    rmdir(ent->d_name);
-		}
+	do {
+	    errno = 0;
+	    ent = readdir(dir);
+	    if (errno) {
+		message(LOG_ERROR, "error reading directory entry: %s\n", 
+			strerror(errno));
+		exit(1);
 	    }
-	} else {
-	    if (sb.st_atime >= killTime) continue;
+	    if (!ent) break;
 
-	    if ((flags & FLAGS_ALLFILES) || S_ISREG(sb.st_mode)) {
-		message(LOG_VERBOSE, "removing file %s/%s\n", 
-			dirname, ent->d_name);
+	    if ((ent->d_name[0] == '.' && (ent->d_name[1] == '\0' || 
+		((ent->d_name[1] == '.') && (ent->d_name[2] == '\0'))))) 
+		continue;
+
+	    message(LOG_REALDEBUG, "found directory entry %s\n", ent->d_name);
+
+	    if (lstat(ent->d_name, &sb)) {
+		message(LOG_ERROR, "failed to lstat %s/%s: %s\n", dirname, 
+			ent->d_name, strerror(errno));
+		continue;
+	    }
+
+	    if (!sb.st_uid && !(flags & FLAGS_FORCE) && 
+			!(sb.st_mode & S_IWUSR)) {
+		message(LOG_DEBUG, "non-writeable file owned by root "
+			"skipped: %s\n", ent->d_name);;
+		continue;
+	    }
+
+	    if (S_ISDIR(sb.st_mode)) {
+		cleanupDirectory(ent->d_name, killTime, flags);
+
+		if (sb.st_atime >= killTime) continue;
+
+		message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
 
 		if (!(flags & FLAGS_TEST)) {
-		    if (unlink(ent->d_name)) 
-			message(LOG_ERROR, "failed to unlink %s: %s", dirname,
-				    ent->d_name);
+		    if (!(flags & FLAGS_ALLFILES)) {
+			if (rmdir(ent->d_name)) {
+			    message(LOG_ERROR, "failed to rmdir %s: %s\n", 
+					dirname, ent->d_name);
+			}
+		    } else {
+			rmdir(ent->d_name);
+		    }
+		}
+	    } else {
+		if (sb.st_atime >= killTime) continue;
+
+		if ((flags & FLAGS_ALLFILES) || S_ISREG(sb.st_mode)) {
+		    message(LOG_VERBOSE, "removing file %s/%s\n", 
+			    dirname, ent->d_name);
+
+		    if (!(flags & FLAGS_TEST)) {
+			if (unlink(ent->d_name)) 
+			    message(LOG_ERROR, "failed to unlink %s: %s\n", 
+					dirname, ent->d_name);
+		    }
 		}
 	    }
-	}
 
-    } while (ent);
+	} while (ent);
 
-    if (chdir("..")) 
-	message(LOG_FATAL, "failed to return to parent directory from %s: %s\n",
-		dirname, strerror(errno));
+	closedir(dir);
 
-    closedir(dir);
+	exit(0);
+    }
+
+    waitpid(pid, &status, 0);
+
+    if (WIFEXITED(status))
+	return WEXITSTATUS(status);
 
     return 0;
 }
