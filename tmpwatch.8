@@ -1,4 +1,4 @@
-.TH TMPWATCH 8 "Sat Aug 14 2004" "Red Hat Linux" "System Administrator's Manual"
+.TH TMPWATCH 8 "Tue Dec 21 2004" "Red Hat Linux" "System Administrator's Manual"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
@@ -16,7 +16,8 @@ When changing directories, \fBtmpwatch\fR is very sensitive to possible
 race conditions and will exit with an error if one is detected. It does
 not follow symbolic links in the directories it's cleaning (even if a
 symbolic link is given as its argument), will not switch filesystems,
- and only removes empty directories and regular files. 
+skips \fIlost+found\fR directories owned by the root user,
+and only removes empty directories and regular files. 
 
 By default, \fBtmpwatch\fR dates files by their atime (access time), not
 their mtime (modification time). If files aren't being removed when

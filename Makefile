@@ -1,6 +1,5 @@
-VERSION=$(shell awk '/^Version:/ { print $$2 }' tmpwatch.spec)
-RELEASE=$(shell awk '/^Release:/ { print $$2 }' tmpwatch.spec)
-CVSTAG = tmpwatch_$(subst .,-,$(VERSION))_$(subst .,-,$(RELEASE))
+VERSION=2.9.2
+CVSTAG = tmpwatch-$(subst .,_,$(VERSION))
 CVSROOT = $(shell cat CVS/Root)
 OS_NAME=$(shell uname -s)
 
