@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.7.2
+Version: 2.7.3
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
@@ -32,9 +32,9 @@ make PREFIX=%{buildroot} MANDIR=%{_mandir} install
 	>> ./etc/cron.daily/tmpwatch
   echo '/usr/sbin/tmpwatch 720 /var/tmp' \
 	>> ./etc/cron.daily/tmpwatch
-  echo '[ -d /var/cache/man ] && /usr/sbin/tmpwatch -f 240 /var/cache/man/{X11R6/cat?,cat?,local/cat?}' \
-	>> ./etc/cron.daily/tmpwatch
-  echo '[ -d /var/catman ] && /usr/sbin/tmpwatch -f 240 /var/catman/{X11R6/cat?,cat?,local/cat?}' \
+  echo 'for d in /var/{cache/man,catman}/{X11R6/cat?,cat?,local/cat?}; do \
+	[ -d $d ] && /usr/sbin/tmpwatch -f 240 $d \
+  done' \
 	>> ./etc/cron.daily/tmpwatch
   chmod +x ./etc/cron.daily/tmpwatch
 )
@@ -49,6 +49,9 @@ rm -rf %{buildroot}
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Mon Jul  2 2001 Preston Brown <pbrown@redhat.com>
+- better checking for directory existence cleaning man cache dirs (#44117)
+
 * Fri May 11 2001 Trond Eivind Glomsrød <teg@redhat.com>
 - Handle directories with large files
 - fix some warnings during compilation
