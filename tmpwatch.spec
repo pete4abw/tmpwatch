@@ -33,7 +33,7 @@ Rebuilt to get right permissions on the Alpha (though I have no idea
 how they ended up wrong).
 
 %prep
-%setup -n tmpwatch
+%setup
 
 %build
 make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
