@@ -1,11 +1,12 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.1
-Release: 2
+Version: 2.2
+Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
 BuildRoot: /var/tmp/%{name}-root
+Requires: psmisc
 
 %description
 The tmpwatch utility recursively searches through specified
@@ -43,6 +44,9 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Mon Feb 14 2000 Preston Brown <pbrown@redhat.com>
+- use fuser to see if file in use before removing
+
 * Wed Feb 02 2000 Cristian Gafton <gafton@redhat.com>
 - fix description
 - man pages are compressed

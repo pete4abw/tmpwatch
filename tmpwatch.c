@@ -11,6 +11,7 @@
 #endif
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -31,6 +32,7 @@
 #define FLAGS_TEST	(1 << 2)
 #define FLAGS_ATIME     (1 << 3)
 #define FLAGS_MTIME     (1 << 4)
+#define FLAGS_FUSER     (1 << 5)
 
 int logLevel = LOG_NORMAL;
 
@@ -100,10 +102,12 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
   struct dirent * ent;
   struct stat sb;
   time_t *significant_time;
-  int status, pid;
+  int status, pid, ret;
   struct stat here;
   struct utimbuf utb;
-  
+
+  char cmd[255];
+
   message(LOG_DEBUG, "cleaning up directory %s\n", dirname);
   
   /* Do everything in a child process so we don't have to chdir(".."),
@@ -173,6 +177,23 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	    "was specified\n");
       }
 
+      // do fuser check
+      ret = 0;
+      if (flags & FLAGS_FUSER) {
+	  if (!access("/sbin/fuser", R_OK|X_OK) &&
+	      ((flags & FLAGS_ALLFILES) || S_ISREG(sb.st_mode))) {
+	      snprintf(cmd, 255, "/sbin/fuser %s/%s > /dev/null 2>&1",
+		       dirname, ent->d_name);
+	      ret = system(cmd);
+	      
+	      // flip flop
+	      if (ret == 0)
+		  ret = 1;
+	      else
+		  ret = 0;
+	  }
+      }
+      
       if (!sb.st_uid && !(flags & FLAGS_FORCE) && 
 	  !(sb.st_mode & S_IWUSR)) {
 	message(LOG_DEBUG, "non-writeable file owned by root "
@@ -182,6 +203,9 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	message(LOG_VERBOSE, "file on different device skipped: %s\n",
 		ent->d_name);
 	continue;
+      } else if (ret) {
+	  message(LOG_VERBOSE, "file is already in use or open: %s\n",
+		  ent->d_name);
       } else if (S_ISDIR(sb.st_mode)) {
 
 	cleanupDirectory(ent->d_name, killTime, flags);
@@ -193,17 +217,16 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	 
 	if (*significant_time >= killTime) continue;
 
-	message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
-
-	if (!(flags & FLAGS_TEST)) {
-	  if (flags & FLAGS_ALLFILES) {
-	    if (rmdir(ent->d_name)) {
-	      message(LOG_ERROR, "failed to rmdir %s: %s\n", 
-		      dirname, ent->d_name);
+	if (flags & FLAGS_ALLFILES) {
+	    message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
+	    if (!(flags & FLAGS_TEST)) {
+		if (rmdir(ent->d_name)) {
+		    message(LOG_ERROR, "failed to rmdir %s: %s\n", 
+			    dirname, ent->d_name);
+		}
+	    } else {
+		rmdir(ent->d_name);
 	    }
-	  } else {
-	    rmdir(ent->d_name);
-	  }
 	}
       } else {
 	if (*significant_time >= killTime) continue;
@@ -272,12 +295,13 @@ int main(int argc, char ** argv) {
     { "mtime", 0, 0, 'm' },
     { "atime", 0, 0, 'u' },
     { "quiet", 0, 0, 'q' },
+    { "fuser", 0, 0, 's' },
     { "test", 0, 0, 't' },
     { "verbose", 0, 0, 'v' },
     { 0, 0, 0, 0 }, 
   };
 #endif
-  const char optstring[] = "afmqtuv";
+  const char optstring[] = "afmqstuv";
 
   if (argc == 1) usage();
 
@@ -299,7 +323,10 @@ int main(int argc, char ** argv) {
     case 'f':
       flags |= FLAGS_FORCE;
       break;
-
+    case 's':
+	flags |= FLAGS_FUSER;
+	break;
+	
     case 't':
       flags |= FLAGS_TEST;
       /* fallthrough */
