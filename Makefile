@@ -1,5 +1,5 @@
-VERSION=$(shell awk '/Version:/ { print $$2 }' tmpwatch.spec)
-RELEASE=$(shell awk '/Release:/ { print $$2 }' tmpwatch.spec)
+VERSION=$(shell awk '/^Version:/ { print $$2 }' tmpwatch.spec)
+RELEASE=$(shell awk '/^Release:/ { print $$2 }' tmpwatch.spec)
 CVSTAG = tmpwatch_$(subst .,-,$(VERSION))_$(subst .,-,$(RELEASE))
 CVSROOT = $(shell cat CVS/Root)
 
