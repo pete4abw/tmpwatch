@@ -1,7 +1,7 @@
 VERSION=$(shell awk '/Version:/ { print $$2 }' tmpwatch.spec)
 CVSTAG = r$(subst .,-,$(VERSION))
 
-CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 ifdef HP_UX
     ROOT=/
