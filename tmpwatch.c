@@ -118,12 +118,20 @@ int check_fuser(const char *dirname, const char *filename)
     return (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0));
 }
 
+time_t *max( time_t *x, time_t *y )
+{
+  if ( x==0 ) return y;
+  if ( y==0 ) return x;
+
+  return (*x>=*y) ? x : y;
+}
+
 int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
 {
   DIR *dir;
   struct dirent *ent;
   struct stat sb;
-  time_t *significant_time = NULL;
+  time_t *significant_time;
   struct stat here;
   struct utimbuf utb;
 
@@ -170,13 +178,14 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
       continue;
     }
 
+    significant_time = 0;
     /* Set significant_time to point at the significant field of sb -
      * either st_atime or st_mtime depending on the flag selected. - alh */
     if (flags & FLAGS_ATIME)
-      significant_time = &sb.st_atime;
-    else if (flags & FLAGS_MTIME)
-      significant_time = &sb.st_mtime;
-    else if (flags & FLAGS_CTIME) {
+      significant_time = max(significant_time, &sb.st_atime);
+    if (flags & FLAGS_MTIME)
+      significant_time = max(significant_time, &sb.st_mtime);
+    if (flags & FLAGS_CTIME) {
       /* Even when we were told to use ctime, for directories we use
 	 mtime, because when a file in a directory is deleted, its
 	 ctime will change, and there's no way we can change it
@@ -184,15 +193,17 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
 	 directories won't hang around for along time after their
 	 contents are removed. */
       if (S_ISDIR(sb.st_mode))
-	significant_time = &sb.st_mtime;
+	significant_time = max(significant_time, &sb.st_mtime);
       else
-	significant_time = &sb.st_ctime;
+	significant_time = max(significant_time, &sb.st_ctime);
     }
     /* What? One or the other should be set by now... */
-    else {
+    if (significant_time==0) {
       message(LOG_FATAL, "error in cleanupDirectory: no selection method "
 	      "was specified\n");
     }
+
+    message(LOG_REALDEBUG, "taking as significant time: %s", ctime(significant_time));
 
     if (!sb.st_uid && !(flags & FLAGS_FORCE) && !(sb.st_mode & S_IWUSR)) {
       message(LOG_DEBUG, "non-writeable file owned by root "
@@ -372,12 +383,6 @@ int main(int argc, char ** argv) {
     case '?':
       usage();
     }
-  }
-  
-  /* atime and mtime options are mutually exclusive. - alh */
-  if (!!(flags & FLAGS_ATIME) + !!(flags & FLAGS_MTIME) +
-      !!(flags & FLAGS_CTIME) > 1) {
-    message(LOG_FATAL, "--atime, --mtime, and --ctime options are mutually exclusive\n");
   }
   
   /* Default to atime if neither was specified. - alh */

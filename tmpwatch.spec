@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.6.2
-Release: 2
+Version: 2.7
+Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
@@ -49,6 +49,10 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Fri Mar  9 2001 Preston Brown <pbrown@redhat.com>
+- Patch from enrico.scholz@informatik.tu-chemnitz.de allows concurrent 
+  usage of mtime, ctime, and atime checking (#19550).
+
 * Fri Jan 05 2001 Preston Brown <pbrown@redhat.com>
 - increased interval for removal to 30 days for /var/tmp per FHS (#19951)
 

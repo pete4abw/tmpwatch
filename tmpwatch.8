@@ -22,30 +22,33 @@ their mtime (modification time). If files aren't being removed when
 \fBls -l\fR implies they should be, use \fBls -u\fR to examine their
 atime to see if that explains the problem.
 
+If the -\-atime, -\-ctime or -\-mtime options are used in combination,
+the decision about deleting a file will be based on the maximum of
+this times.
+
 The \fIhours\fR parameter defines the threshold for removing files. If
 the file has not been accessed for \fIhours\fR hours, the file is removed.
 Following this, one or more directories may be given for \fBtmpwatch\fR
 to clean up.
 
+
 .SH OPTIONS
 .TP
 \fB-u, -\-atime\fR
-Make the decision about deleting a file based on the file's atime
-(access time). This is the default. This option is incompatible with 
--\-mtime and -\-ctime.
+Make the decision about deleting a file based on the file's atime (access
+time). This is the default.
+
 
 .TP
 \fB-m, -\-mtime\fR
 Make the decision about deleting a file based on the file's mtime
-(modification time) instead of the atime. This option is incompatible
-with -\-atime and -\-ctime.
+(modification time) instead of the atime.
 
 .TP
 \fB-c, -\-ctime\fR
 Make the decision about deleting a file based on the file's ctime
 (inode change time) instead of the atime; for directories, make the
-decision based on the mtime.  This option is incompatible with -\-atime
-and -\-mtime.
+decision based on the mtime.
 
 .TP
 \fB-a, -\-all\fR
