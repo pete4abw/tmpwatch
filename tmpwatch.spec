@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.7
+Version: 2.7.1
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
@@ -23,10 +23,10 @@ removes empty directories and regular files.
 make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
 
 %install
-rm -rf $RPM_BUILD_ROOT
-make PREFIX=$RPM_BUILD_ROOT MANDIR=%{_mandir} install
+rm -rf %{buildroot}
+make PREFIX=%{buildroot} MANDIR=%{_mandir} install
 
-( cd $RPM_BUILD_ROOT
+( cd %{buildroot}
   mkdir -p ./etc/cron.daily
   echo '/usr/sbin/tmpwatch 240 /tmp' \
 	>> ./etc/cron.daily/tmpwatch
@@ -40,7 +40,7 @@ make PREFIX=$RPM_BUILD_ROOT MANDIR=%{_mandir} install
 )
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
@@ -49,6 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Thu Mar 29 2001 Preston Brown <pbrown@redhat.com>
+- fixed longstanding bug where directories removed while in test mode.
+
 * Fri Mar  9 2001 Preston Brown <pbrown@redhat.com>
 - Patch from enrico.scholz@informatik.tu-chemnitz.de allows concurrent 
   usage of mtime, ctime, and atime checking (#19550).
