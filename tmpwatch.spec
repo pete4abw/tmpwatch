@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-%define version 2.0
+%define version 2.1
 Version: %{version}
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
@@ -44,6 +44,18 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Tue Jan 18 2000 Preston Brown <pbrown@redhat.com>
+- null terminal opt struct (#7836)
+- test flag implies verbose (#2383)
+
+* Wed Jan 12 2000 Paul Gear <paulgear@bigfoot.com>
+- HP-UX port (including doco update)
+- Tweaked Makefile to allow installation into different base directory
+- Got rid of GETOPT_... defines which didn't do anything, so that short
+  equivalents for all long options could be defined.
+- Fixed bug in message() where 'where' file handle was set but unused
+- Changed most fprintf() calls to message()
+
 * Mon Aug 30 1999 Preston Brown <pbrown@redhat.com>
 - skip lost+found directories
 - option to use file's atime instead of mtime (# 4178)
@@ -78,4 +90,4 @@ rm -rf $RPM_BUILD_ROOT
 
 * Sun Mar 09 1997 Erik Troan <ewt@redhat.com>
 - Rebuilt to get right permissions on the Alpha (though I have no idea
-- how they ended up wrong).
+  how they ended up wrong).

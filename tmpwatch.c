@@ -6,7 +6,9 @@
 
 #include <dirent.h>
 #include <errno.h>
-#include <getopt.h>
+#ifndef __hpux
+    #include <getopt.h>
+#endif
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,10 +32,6 @@
 #define FLAGS_ATIME     (1 << 3)
 #define FLAGS_MTIME     (1 << 4)
 
-#define GETOPT_TEST	1000
-#define GETOPT_ATIME    1001
-#define GETOPT_MTIME    1002
-
 int logLevel = LOG_NORMAL;
 
 void message(int level, char * format, ...) {
@@ -45,10 +43,10 @@ void message(int level, char * format, ...) {
 
     if (level > LOG_NORMAL) {
       where = stderr;
-      fprintf(stderr, "error: ");
+      fprintf(where, "error: ");
     }
 
-    vfprintf(stdout, format, args);
+    vfprintf(where, format, args);
 
     if (level == LOG_FATAL) exit(1);
   }
@@ -171,9 +169,8 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 	significant_time = &sb.st_mtime;
       /* What? One or the other should be set by now... */
       else {
-	fprintf(stderr, "error in cleanupDirectory: no selection method was "
-		"specified\n");
-	exit(1);
+	message(LOG_FATAL, "error in cleanupDirectory: no selection method "
+	    "was specified\n");
       }
 
       if (!sb.st_uid && !(flags & FLAGS_FORCE) && 
@@ -251,10 +248,15 @@ void printCopyright(void) {
 	  "the GNU Public License.\n");
 }
 
+
 void usage(void) {
   printCopyright();
   fprintf(stderr, "\n");
-  fprintf(stderr, "tmpwatch [-favq] [--verbose] [--force] [--all] [--test] [--quiet] [--atime|--mtime] <hours-untouched> <dirs>\n");
+#ifndef __hpux
+  fprintf(stderr, "tmpwatch [-u|-m] [-afqtv] [--verbose] [--force] [--all] [--test] [--quiet] [--atime|--mtime] <hours-untouched> <dirs>\n");
+#else
+  fprintf(stderr, "tmpwatch [-u|-m] [-afqtv] <hours-untouched> <dirs>\n");
+#endif
   exit(1);
 }
 
@@ -263,23 +265,30 @@ int main(int argc, char ** argv) {
   unsigned int killTime, long_index;
   int flags = 0, arg;
   struct stat sb;
+#ifndef __hpux
   struct option options[] = {
     { "all", 0, 0, 'a' },
     { "force", 0, 0, 'f' },
-    { "test", 0, 0, GETOPT_TEST },
-    { "verbose", 0, 0, 'v' },
+    { "mtime", 0, 0, 'm' },
+    { "atime", 0, 0, 'u' },
     { "quiet", 0, 0, 'q' },
-    { "atime", 0, 0, GETOPT_ATIME },
-    { "mtime", 0, 0, GETOPT_MTIME },
+    { "test", 0, 0, 't' },
+    { "verbose", 0, 0, 'v' },
+    { 0, 0, 0, 0 }, 
   };
+#endif
+  const char optstring[] = "afmqtuv";
 
   if (argc == 1) usage();
 
   while (1) {
     long_index = 0;
 
-    arg = getopt_long(argc, argv, "afv", options, 
-		      &long_index);
+#ifndef __hpux
+    arg = getopt_long(argc, argv, optstring, options, &long_index);
+#else
+    arg = getopt(argc, argv, optstring);
+#endif
     if (arg == -1) break;
 
     switch (arg) {
@@ -291,32 +300,30 @@ int main(int argc, char ** argv) {
       flags |= FLAGS_FORCE;
       break;
 
-    case GETOPT_TEST:
+    case 't':
       flags |= FLAGS_TEST;
       /* fallthrough */
     case 'v':
-      logLevel ? logLevel -= 1 : 0;
+      logLevel > 0 ? logLevel -= 1 : 0;
       break;
     case 'q':
       logLevel = LOG_FATAL;
       break;
-    case GETOPT_ATIME:
+    case 'u':
       flags |= FLAGS_ATIME;
       break;
-    case GETOPT_MTIME:
+    case 'm':
       flags |= FLAGS_MTIME;
       break;
 
     case '?':
-      exit(1);
+      usage();
     }
   }
   
   /* atime and mtime options are mutually exclusive. - alh */
   if ((flags & FLAGS_ATIME) && (flags & FLAGS_MTIME)) {
-    fprintf(stderr, "error: --atime and --mtime options are mutually "
-	    "exclusive\n");
-    exit(1);
+    message(LOG_FATAL, "--atime and --mtime options are mutually exclusive\n");
   }
   
   /* Default to atime if neither was specified. - alh */
@@ -324,19 +331,16 @@ int main(int argc, char ** argv) {
     flags |= FLAGS_ATIME;
 
   if (optind == argc) {
-    fprintf(stderr, "error: time (in hours) must be given\n");
-    exit(1);
+    message(LOG_FATAL, "time (in hours) must be given\n");
   }
 
   if ((sscanf(argv[optind], "%d", &grace) != 1) || (grace < 0)) {
-    fprintf(stderr, "error: bad time argument %s\n", argv[optind]);
-    exit(1);
+    message(LOG_FATAL, "bad time argument %s\n", argv[optind]);
   }
 
   optind++;
   if (optind == argc) {
-    fprintf(stderr, "error: directory name(s) expected\n");
-    exit(1);
+    message(LOG_FATAL, "directory name(s) expected\n");
   }
 
   grace = grace * 3600;			/* to seconds from hours */

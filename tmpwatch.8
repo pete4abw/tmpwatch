@@ -1,9 +1,9 @@
-.TH TMPWATCH 8 "Thu Apr 08 1999"
+.TH TMPWATCH 8 "Wed Jan 12 2000"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
-\fBtmpwatch\fR [-favq] [--verbose] [--force] [--all] [--test] 
+\fBtmpwatch\fR [-u|-m] [-faqtv] [--verbose] [--force] [--all] [--test] 
                [--atime|--mtime] [--quiet] <hours> <dirs>
 
 .SH DESCRIPTION
@@ -19,7 +19,7 @@ symbolic link is given as its argument), will not switch filesystems,
 
 \fBtmpwatch\fR dates files by their atime, not their mtime. If
 files aren't being removed when \fBls -l\fR implies they should be, use
-\fBstat(1)\fR to examine the files atime to see if that explains the
+\fBls -u\fR to examine their atime to see if that explains the
 problem.
 
 The \fIhours\fR parameter defines the threshold for removing files. If
@@ -29,12 +29,12 @@ to clean up.
 
 .SH OPTIONS
 .TP
-\fB-\-atime\fR
-Make the decision about deleting a file based on the file's
-atime. This is the default. This option is incompatible with --mtime.
+\fB-u, -\-atime\fR
+Make the decision about deleting a file based on the file's atime
+(access time). This is the default. This option is incompatible with -\-mtime.
 
 .TP
-\fB-\-mtime\fR
+\fB-m, -\-mtime\fR
 Make the decision about deleting a file based on the file's mtime
 (modification time) instead of the atime. This option is incompatible
 with --atime.
@@ -48,20 +48,22 @@ Remove all file types, not just regular files and directories.
 Remove files even if root doesn't have write access (akin to \fBrm -f\fR).
 
 .TP
-\fB-\-test\fR
+\fB-t, -\-test\fR
 Doesn't remove files, but goes through the motions of removing them. This
 implies \fB\-v\fR.
 
 .TP
-\fB-v\fR
+\fB-v, -\-verbose\fR
 Print a verbose display. Two levels of verboseness are available -- use
 this option twice to get the most verbose output.
 
 .SH SEE ALSO
 .IR cron (1),
 .IR ls (1),
-.IR rm (1),
-.IR stat (1)
+.IR rm (1)
+
+.SH WARNINGS
+GNU-style long options are not supported on HP-UX.
 
 .SH AUTHORS
 .nf

@@ -1,0 +1,11 @@
+To install on HP-UX 11.00 (should work on 10.x also), do the following:
+
+1.  Obtain and install GNU make.  I use the package from the Software Porting
+    and Archive Centre for HP-UX at http://hpux.cs.utah.edu/.
+
+2.  Run 'gmake HP_UX=true' to compile.
+
+3.  To install, run 'gmake install BASEDIR=/dest/dir', where '/dest/dir' is
+    your desired destination directory (defaults to /usr/local/).
+
+Paul Gear <paulgear@bigfoot.com>
