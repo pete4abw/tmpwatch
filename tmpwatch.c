@@ -95,10 +95,11 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 
     message(LOG_DEBUG, "cleaning up directory %s\n", dirname);
 
-    /* do everything in a child process so we don't have to chdir(".."),
+    /* Do everything in a child process so we don't have to chdir(".."),
        which would lead to a race condition. fork() on Linux is very efficient
        so this shouldn't be a big deal (probably just a exception on one page
-       of stack, not bad) */
+       of stack, not bad). I should probably just keep a directory stack
+       and fchdir() back up it, but it's not worth changing now. */
 
     if (!(pid = fork())) {
 	if (safe_chdir(dirname)) return 1;
@@ -187,7 +188,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 }
 
 void printCopyright(void) {
-    fprintf(stderr, "tmpwatch " VERSION " - (c) 1996 Red Hat Software\n");
+    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997 Red Hat Software\n");
     fprintf(stderr, "This may be freely redistributed under the terms of "
 			"the GNU Public License.\n");
 }
@@ -195,7 +196,7 @@ void printCopyright(void) {
 void usage(void) {
     printCopyright();
     fprintf(stderr, "\n");
-    fprintf(stderr, "tmpwatch [-fav] [--force] [--all] [--test] <hours-untouched> <dirs>\n");
+    fprintf(stderr, "tmpwatch [-fav] [--verbose] [--force] [--all] [--test] <hours-untouched> <dirs>\n");
     exit(1);
 }
 
@@ -203,11 +204,12 @@ int main(int argc, char ** argv) {
     unsigned int grace;
     unsigned int killTime, long_index;
     int flags = 0, arg;
+    struct stat sb;
     struct option options[] = {
 	    { "all", 0, 0, 'a' },
 	    { "force", 0, 0, 'f' },
 	    { "test", 0, 0, GETOPT_TEST },
-	    { "", 0, 0, 'v' },
+	    { "verbose", 0, 0, 'v' },
     };
 
     if (argc == 1) usage();
@@ -262,8 +264,22 @@ int main(int argc, char ** argv) {
 
     killTime = time(NULL) - grace;
 
-    while (optind < argc)
-	cleanupDirectory(argv[optind++], killTime, 0);
+    while (optind < argc) {
+	if (lstat(argv[optind], &sb)) {
+	    message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
+		    argv[optind], strerror(errno));
+	    exit(1);
+	}
+
+	if (S_ISLNK(sb.st_mode)) {
+	    message(LOG_DEBUG, "initial directory %s is a symlink -- "
+			"skipping\n", argv[optind]);
+	} else {
+	    cleanupDirectory(argv[optind], killTime, 0);
+	}
+
+	optind++;
+    }
 
     return 0;
 }
