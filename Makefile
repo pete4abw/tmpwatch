@@ -35,7 +35,7 @@ all: tmpwatch
 install: all
 	[ -d $(ROOT)$(SBINDIR) ] || mkdir -p $(ROOT)$(SBINDIR)
 	[ -d $(ROOT)$(MANDIR)/man8 ] || mkdir -p $(ROOT)$(MANDIR)/man8
-	$(INSTALL) -s -m 755 tmpwatch $(ROOT)$(SBINDIR)/tmpwatch
+	$(INSTALL) -m 755 tmpwatch $(ROOT)$(SBINDIR)/tmpwatch
 	$(INSTALL) -m 644 tmpwatch.8 $(ROOT)$(MANDIR)/man8/tmpwatch.8
 
 clean:

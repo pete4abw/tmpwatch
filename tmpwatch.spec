@@ -52,6 +52,7 @@ rm -rf %{buildroot}
 * Sat Aug 14 2004 Miloslav Trmac <mitr@redhat.com> - 2.9.1-1
 - Add --exclude, use it to preserve X socket directories (#107069)
 - Allow multiple directory arguments with relative paths (#91097)
+- Don't manually strip the binary
 
 * Fri May 30 2003 Mike A. Harris <mharris@redhat.com> 2.9.0-1
 - Added Solaris/HPUX support to tmpwatch via patch from Paul Gear (#71288)
