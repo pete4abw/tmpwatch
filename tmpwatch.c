@@ -122,23 +122,17 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
 
   message(LOG_DEBUG, "cleaning up directory %s\n", dirname);
   
-  /* Do everything in a child process so we don't have to chdir(".."),
-     which would lead to a race condition. fork() on Linux is very efficient
-     so this shouldn't be a big deal (probably just a exception on one page
-     of stack, not bad). I should probably just keep a directory stack
-     and fchdir() back up it, but it's not worth changing now. */
-  
   if (safe_chdir(dirname))
     return 0;
 
-  if ((dir = opendir(".")) == NULL) {
-    message(LOG_ERROR, "opendir error on current directory %s: %s",
+  if (lstat(".", &here)) {
+    message(LOG_ERROR, "error statting current directory %s: %s",
 	    dirname, strerror(errno));
     return 0;
   }
 
-  if (lstat(".", &here)) {
-    message(LOG_ERROR, "error statting current directory %s: %s",
+  if ((dir = opendir(".")) == NULL) {
+    message(LOG_ERROR, "opendir error on current directory %s: %s",
 	    dirname, strerror(errno));
     return 0;
   }
@@ -223,11 +217,6 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
 		dirname, ent->d_name, strerror(errno));
       }
 
-      /* restore access time on the directory to original time */
-      utb.actime = sb.st_atime; /* atime */
-      utb.modtime = sb.st_mtime; /* mtime */
-      utime(ent->d_name, &utb);
-
       if (*significant_time >= killTime)
         continue;
 
@@ -283,6 +272,11 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
 	    dirname, strerror(errno));
     return 0;
   }
+
+  /* restore access time on this directory to its original time */
+  utb.actime = here.st_atime; /* atime */
+  utb.modtime = here.st_mtime; /* mtime */
+  utime(".", &utb);
 
   return 1;
 }
