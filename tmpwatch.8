@@ -1,10 +1,11 @@
-.TH TMPWATCH 8 "Wed Nov 28 2001" "Red Hat Linux" "System Administrator's Manual"
+.TH TMPWATCH 8 "Sat Aug 14 2004" "Red Hat Linux" "System Administrator's Manual"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
 \fBtmpwatch\fR [-u|-m|-c] [-faqstv] [--verbose] [--force] [--all] [--test] 
-               [--fuser ] [--atime|--mtime|--ctime] [--quiet] <hours> <dirs>
+               [--fuser] [--atime|--mtime|--ctime] [--quiet]
+               [--exclude <path>] <hours> <dirs>
 
 .SH DESCRIPTION
 \fBtmpwatch\fR recursively removes files which haven't been accessed
@@ -79,6 +80,12 @@ circumstances, but not all.  Dependent on fuser being installed in
 Print a verbose display. Two levels of verboseness are available -- use
 this option twice to get the most verbose output.
 
+.TP
+\fB-x, -\-exclude=\fIpath\fR
+Skip absolute \fIpath\fR; if \fIpath\fR is a directory, all files
+contained in it are skipped too.
+The directories to clean up must also be absolute paths.
+
 .SH SEE ALSO
 .IR cron (1),
 .IR ls (1),
@@ -93,4 +100,5 @@ GNU-style long options are not supported on HP-UX.
 Erik Troan <ewt@redhat.com>
 Preston Brown <pbrown@redhat.com>
 Nalin Dahyabhai <nalin@redhat.com>
+Miloslav Trmac <mitr@redhat.com>
 .fi

@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.9.0
+Version: 2.9.1
 Release: 1
 Source: %{name}-%{version}.tar.gz
 License: GPL
@@ -28,7 +28,8 @@ make ROOT=%{buildroot} SBINDIR=%{_sbindir} MANDIR=%{_mandir} install
 
 mkdir -p %{buildroot}/etc/cron.daily
 cat > %{buildroot}/etc/cron.daily/tmpwatch <<EOF
-/usr/sbin/tmpwatch 240 /tmp
+/usr/sbin/tmpwatch -x /tmp/.X11-unix -x /tmp/.XIM-unix -x /tmp/.font-unix \
+	-x /tmp/.ICE-unix -x /tmp/.Test-unix 240 /tmp
 /usr/sbin/tmpwatch 720 /var/tmp
 for d in /var/{cache/man,catman}/{cat?,X11R6/cat?,local/cat?}; do
     if [ -d "\$d" ]; then
@@ -48,6 +49,10 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/cron.daily/tmpwatch
 
 %changelog
+* Sat Aug 14 2004 Miloslav Trmac <mitr@redhat.com> - 2.9.1-1
+- Add --exclude, use it to preserve X socket directories (#107069)
+- Allow multiple directory arguments with relative paths (#91097)
+
 * Fri May 30 2003 Mike A. Harris <mharris@redhat.com> 2.9.0-1
 - Added Solaris/HPUX support to tmpwatch via patch from Paul Gear (#71288)
 - Rebuild in rawhide as 2.9.0-1

@@ -1,11 +1,12 @@
 /*
  * tmpwatch.c -- remove files in a directory, but do it carefully.
- * Copyright (c) 1997-2001, Red Hat, Inc.
+ * Copyright (c) 1997-2001, 2004 Red Hat, Inc. All rights reserved.
  * Licensed under terms of the GPL.
  *
  * Authors: Erik Troan <ewt@redhat.com>
  *          Preston Brown <pbrown@redhat.com>
  *          Mike A. Harris <mharris@redhat.com>
+ *          Miloslav Trmac <mitr@redhat.com>
  *
  */
 
@@ -61,6 +62,15 @@
 /* Do not remove lost+found directories if owned by this UID */
 #define LOSTFOUND_UID 0
 
+struct exclusion
+{
+  struct exclusion *next;
+  char *dir, *file;
+};
+
+static struct exclusion *exclusions /* = NULL */;
+static struct exclusion **exclusions_tail = &exclusions;
+
 int logLevel = LOG_NORMAL;
 
 void message(int level, char * format, ...)
@@ -80,6 +90,19 @@ void message(int level, char * format, ...)
 
 	if (level == LOG_FATAL) exit(1);
     }
+}
+
+static void *
+xmalloc(size_t size)
+{
+    void *p;
+
+    p = malloc (size);
+    if (p != NULL || size == 0)
+	return p;
+    message(LOG_FATAL, "can not allocate memory\n");
+    /* NOTREACHED */
+    return NULL;
 }
 
 int safe_chdir(const char *fulldirname, const char *reldirname,
@@ -209,6 +232,8 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
     }
 
     do {
+	struct exclusion *e;
+	
 	errno = 0;
 	ent = readdir(dir);
 	if (errno) {
@@ -238,6 +263,16 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    continue;
 
 	message(LOG_REALDEBUG, "found directory entry %s\n", ent->d_name);
+
+	for (e = exclusions; e != NULL; e = e->next) {
+	    if (strcmp(fulldirname, e->dir) == 0
+		&& strcmp(ent->d_name, e->file) == 0) {
+		message(LOG_REALDEBUG, "in exclusion list, skipping\n");
+		break;
+	    }
+	}
+	if (e != NULL)
+	    continue;
 
 	significant_time = 0;
 	/* Set significant_time to point at the significant field of sb -
@@ -412,7 +447,8 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 }
 
 void printCopyright(void) {
-    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2001 Red Hat, Inc.\n");
+    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2004 Red Hat, Inc. "
+	    "All rights reserved.\n");
     fprintf(stderr, "This may be freely redistributed under the terms of "
 	    "the GNU Public License.\n");
 }
@@ -422,9 +458,9 @@ void usage(void) {
     printCopyright();
     fprintf(stderr, "\n");
 #ifdef _HAVE_GETOPT_LONG
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtv] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] <hours-untouched> <dirs>\n");
+    fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtvx] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] [--exclude <path>] <hours-untouched> <dirs>\n");
 #else
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtv] <hours-untouched> <dirs>\n");
+    fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtvx] <hours-untouched> <dirs>\n");
 #endif
     exit(1);
 }
@@ -432,7 +468,7 @@ void usage(void) {
 int main(int argc, char ** argv) {
     unsigned int grace;
     unsigned int killTime, long_index;
-    int flags = 0, arg;
+    int flags = 0, arg, orig_dir;
     struct stat sb;
     
 #ifdef _HAVE_GETOPT_LONG
@@ -449,13 +485,14 @@ int main(int argc, char ** argv) {
 #endif
 	{ "test", 0, 0, 't' },
 	{ "verbose", 0, 0, 'v' },
+	{ "exclude", required_argument, 0, 'x' },
 	{ 0, 0, 0, 0 }, 
     };
 #endif
 #ifdef _HAVE_FUSER
-    const char optstring[] = "adcfmqstuv";
+    const char optstring[] = "adcfmqstuvx:";
 #else
-    const char optstring[] = "adcfmqtuv";
+    const char optstring[] = "adcfmqtuvx:";
 #endif
 
     if (argc == 1) usage();
@@ -504,6 +541,28 @@ int main(int argc, char ** argv) {
 	case 'c':
 	    flags |= FLAG_CTIME;
 	    break;
+	case 'x': {
+	    struct exclusion *e;
+	    char *p;
+
+	    e = xmalloc(sizeof (*e));
+	    p = strrchr(optarg, '/');
+	    if (*optarg != '/' || p == NULL) {
+		message(LOG_ERROR, "%s is not an absolute path\n", optarg);
+		usage();
+	    }
+	    e->file = p + 1;
+	    if (p == optarg)
+		e->dir = "/";
+	    else {
+		*p = 0;
+		e->dir = optarg;
+	    }
+	    e->next = NULL;
+	    *exclusions_tail = e;
+	    exclusions_tail = &e->next;
+	    break;
+	}
 	case '?':
 	default:
 	    usage();
@@ -535,8 +594,14 @@ int main(int argc, char ** argv) {
 
     /* set stdout line buffered so it is flushed before each fork */
     setvbuf(stdout, NULL, _IOLBF, 0);
-      
+
+    orig_dir = open(".", O_RDONLY);
+    if (orig_dir == -1)
+	message(LOG_FATAL, "cannot open current directory\n");
     while (optind < argc) {
+	if (exclusions != NULL && *argv[optind] != '/')
+	    message(LOG_ERROR, "--exclude is ignored for %s, which is not an "
+		    "absolute path\n", argv[optind]);
 	if (lstat(argv[optind], &sb)) {
 	    message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
 		    argv[optind], strerror(errno));
@@ -553,9 +618,11 @@ int main(int argc, char ** argv) {
 		message(LOG_ERROR, "cleanup failed in %s: %s\n", argv[optind],
 			strerror(errno));
 	    }
+	    fchdir(orig_dir);
 	}
 	optind++;
     }
+    close(orig_dir);
 
     return 0;
 }
