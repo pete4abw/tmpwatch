@@ -24,7 +24,7 @@ make
 
 %install
 rm -rf %{buildroot}
-make root=%{buildroot} SBINDIR=%{_sbindir} MANDIR=%{_mandir} install
+make ROOT=%{buildroot} SBINDIR=%{_sbindir} MANDIR=%{_mandir} install
 
 mkdir -p %{buildroot}/etc/cron.daily
 cat > %{buildroot}/etc/cron.daily/tmpwatch <<EOF
