@@ -1,6 +1,6 @@
 /*
  * tmpwatch.c -- remove files in a directory, but do it carefully.
- * Copyright (c) 1997-2001, 2004 Red Hat, Inc. All rights reserved.
+ * Copyright (c) 1997-2001, 2004, 2005 Red Hat, Inc. All rights reserved.
  * Licensed under terms of the GPL.
  *
  * Authors: Erik Troan <ewt@redhat.com>
@@ -447,7 +447,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 }
 
 void printCopyright(void) {
-    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2004 Red Hat, Inc. "
+    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2005 Red Hat, Inc. "
 	    "All rights reserved.\n");
     fprintf(stderr, "This may be freely redistributed under the terms of "
 	    "the GNU Public License.\n");
@@ -467,8 +467,8 @@ void usage(void) {
 
 int main(int argc, char ** argv) {
     unsigned int grace;
-    unsigned int killTime, long_index;
-    int flags = 0, arg, orig_dir;
+    unsigned int killTime;
+    int flags = 0, arg, orig_dir, long_index;
     struct stat sb;
     
 #ifdef _HAVE_GETOPT_LONG
