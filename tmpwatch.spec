@@ -33,8 +33,8 @@ make PREFIX=%{buildroot} MANDIR=%{_mandir} install
   echo '/usr/sbin/tmpwatch 720 /var/tmp' \
 	>> ./etc/cron.daily/tmpwatch
   echo 'for d in /var/{cache/man,catman}/{X11R6/cat?,cat?,local/cat?}; do \
-	[ -d $d ] && /usr/sbin/tmpwatch -f 240 $d \
-  done' \
+    [ -d $d ] && /usr/sbin/tmpwatch -f 240 $d \
+done' \
 	>> ./etc/cron.daily/tmpwatch
   chmod +x ./etc/cron.daily/tmpwatch
 )
