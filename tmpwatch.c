@@ -1,15 +1,21 @@
 /*
  * tmpwatch.c -- remove files in a directory, but do it carefully.
- * Copyright (c) 1997-2000, Red Hat, Inc.
+ * Copyright (c) 1997-2001, Red Hat, Inc.
  * Licensed under terms of the GPL.
+ *
+ * Authors: Erik Troan <ewt@redhat.com>
+ *          Preston Brown <pbrown@redhat.com>
+ *
  */
 
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+
 #ifndef __hpux
-    #include <getopt.h>
+#include <getopt.h>
 #endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,13 +34,13 @@
 #define LOG_ERROR	5
 #define LOG_FATAL	6
 
-#define FLAGS_FORCE	(1 << 0)
-#define FLAGS_ALLFILES	(1 << 1)   /* normally just files, dirs are removed */
-#define FLAGS_TEST	(1 << 2)
-#define FLAGS_ATIME     (1 << 3)
-#define FLAGS_MTIME     (1 << 4)
-#define FLAGS_FUSER     (1 << 5)
-#define FLAGS_CTIME     (1 << 6)
+#define FLAG_FORCE	(1 << 0)
+#define FLAG_ALLFILES	(1 << 1)   /* normally just files, dirs are removed */
+#define FLAG_TEST	(1 << 2)
+#define FLAG_ATIME     (1 << 3)
+#define FLAG_MTIME     (1 << 4)
+#define FLAG_FUSER     (1 << 5)
+#define FLAG_CTIME     (1 << 6)
 
 int logLevel = LOG_NORMAL;
 
@@ -181,11 +187,11 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
     significant_time = 0;
     /* Set significant_time to point at the significant field of sb -
      * either st_atime or st_mtime depending on the flag selected. - alh */
-    if (flags & FLAGS_ATIME)
+    if (flags & FLAG_ATIME)
       significant_time = max(significant_time, &sb.st_atime);
-    if (flags & FLAGS_MTIME)
+    if (flags & FLAG_MTIME)
       significant_time = max(significant_time, &sb.st_mtime);
-    if (flags & FLAGS_CTIME) {
+    if (flags & FLAG_CTIME) {
       /* Even when we were told to use ctime, for directories we use
 	 mtime, because when a file in a directory is deleted, its
 	 ctime will change, and there's no way we can change it
@@ -205,7 +211,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
 
     message(LOG_REALDEBUG, "taking as significant time: %s", ctime(significant_time));
 
-    if (!sb.st_uid && !(flags & FLAGS_FORCE) && !(sb.st_mode & S_IWUSR)) {
+    if (!sb.st_uid && !(flags & FLAG_FORCE) && !(sb.st_mode & S_IWUSR)) {
       message(LOG_DEBUG, "non-writeable file owned by root "
 	      "skipped: %s\n", ent->d_name);;
       continue;
@@ -238,7 +244,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
       if (*significant_time >= killTime)
         continue;
 
-      if ((flags & FLAGS_FUSER) &&
+      if ((flags & FLAG_FUSER) &&
 	  (access("/sbin/fuser", R_OK | X_OK) == 0) &&
 	  check_fuser(dirname, ent->d_name)) {
         message(LOG_VERBOSE, "file is already in use or open: %s\n",
@@ -249,24 +255,22 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
       /* we should try to remove the directory if it contains no files. */
       message(LOG_VERBOSE, "removing directory %s/%s\n", dirname, ent->d_name);
 
-      if (!(flags & FLAGS_TEST)) {
+      if (!(flags & FLAG_TEST)) {
         if (rmdir(ent->d_name)) {
 	  if (errno != ENOTEMPTY) {
 	    message(LOG_ERROR, "failed to rmdir %s/%s: %s", 
 		    dirname, ent->d_name, strerror(errno));
 	  }
         }
-      } else {
-        rmdir(ent->d_name);
       }
     } else {
       if (*significant_time >= killTime)
         continue;
 
-      if ((flags & FLAGS_ALLFILES) ||
+      if ((flags & FLAG_ALLFILES) ||
 	  S_ISREG(sb.st_mode) ||
 	  S_ISLNK(sb.st_mode)) {
-        if (flags & FLAGS_FUSER && !access("/sbin/fuser", R_OK|X_OK) &&
+        if (flags & FLAG_FUSER && !access("/sbin/fuser", R_OK|X_OK) &&
 	  check_fuser(dirname, ent->d_name)) {
 	  message(LOG_VERBOSE, "file is already in use or open: %s\n",
 		  ent->d_name);
@@ -276,7 +280,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
         message(LOG_VERBOSE, "removing file %s/%s\n",
 		dirname, ent->d_name);
 
-        if (!(flags & FLAGS_TEST)) {
+        if (!(flags & FLAG_TEST)) {
 	  if (unlink(ent->d_name)) 
 	    message(LOG_ERROR, "failed to unlink %s: %s\n", 
 		    dirname, ent->d_name);
@@ -352,18 +356,18 @@ int main(int argc, char ** argv) {
 
     switch (arg) {
     case 'a':
-      flags |= FLAGS_ALLFILES;
+      flags |= FLAG_ALLFILES;
       break;
 
     case 'f':
-      flags |= FLAGS_FORCE;
+      flags |= FLAG_FORCE;
       break;
     case 's':
-	flags |= FLAGS_FUSER;
+	flags |= FLAG_FUSER;
 	break;
 	
     case 't':
-      flags |= FLAGS_TEST;
+      flags |= FLAG_TEST;
       /* fallthrough */
     case 'v':
       logLevel > 0 ? logLevel -= 1 : 0;
@@ -372,13 +376,13 @@ int main(int argc, char ** argv) {
       logLevel = LOG_FATAL;
       break;
     case 'u':
-      flags |= FLAGS_ATIME;
+      flags |= FLAG_ATIME;
       break;
     case 'm':
-      flags |= FLAGS_MTIME;
+      flags |= FLAG_MTIME;
       break;
     case 'c':
-	flags |= FLAGS_CTIME;
+	flags |= FLAG_CTIME;
 	break;
     case '?':
       usage();
@@ -386,8 +390,8 @@ int main(int argc, char ** argv) {
   }
   
   /* Default to atime if neither was specified. - alh */
-  if (!(flags & (FLAGS_ATIME | FLAGS_MTIME | FLAGS_CTIME)))
-    flags |= FLAGS_ATIME;
+  if (!(flags & (FLAG_ATIME | FLAG_MTIME | FLAG_CTIME)))
+    flags |= FLAG_ATIME;
 
   if (optind == argc) {
     message(LOG_FATAL, "time (in hours) must be given\n");
