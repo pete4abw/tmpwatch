@@ -1,11 +1,11 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.5
+Version: 2.5.1
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
-BuildRoot: /var/tmp/%{name}-root
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
 Requires: psmisc
 
 %description
@@ -24,7 +24,7 @@ make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make PREFIX=$RPM_BUILD_ROOT install
+make PREFIX=$RPM_BUILD_ROOT MANDIR=${_mandir} install
 
 ( cd $RPM_BUILD_ROOT
   mkdir -p ./etc/cron.daily
@@ -42,10 +42,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 /usr/sbin/tmpwatch
-/usr/share/man/man8/tmpwatch.8*
+%{_mandir}/man8/tmpwatch.8*
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Tue Jun 13 2000 Preston Brown <pbrown@redhat.com>
+- FHS compliance
+
 * Thu May 18 2000 Preston Brown <pbrown@redhat.com>
 - don't complain about failure to remove non-empty directories.
 - fix man page path
