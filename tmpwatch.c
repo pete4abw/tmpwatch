@@ -5,6 +5,7 @@
  *
  * Authors: Erik Troan <ewt@redhat.com>
  *          Preston Brown <pbrown@redhat.com>
+ *          Mike A. Harris <mharris@redhat.com>
  *
  */
 
@@ -82,7 +83,7 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
     }
 
     if (! S_ISDIR(sb1.st_mode)) {
-	message(LOG_ERROR, "directory %s changed right under us!!!",
+	message(LOG_ERROR, "directory %s changed right under us!!!\n",
 		fulldirname);
 	message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
 	return 1;
@@ -92,7 +93,7 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
      * safe_chdir
      */
     if (st_dev != sb1.st_dev || st_ino != sb1.st_ino) {
-	message(LOG_ERROR, "directory %s changed right under us!!!",
+	message(LOG_ERROR, "directory %s changed right under us!!!\n",
 		fulldirname);
 	message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
 	return 1;
@@ -170,7 +171,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	return 0;
 
     if (lstat(".", &here)) {
-	message(LOG_ERROR, "error stat()ing current directory %s: %s",
+	message(LOG_ERROR, "error stat()ing current directory %s: %s\n",
 		fulldirname, strerror(errno));
 	return 0;
     }
@@ -190,7 +191,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
     }
 
     if ((dir = opendir(".")) == NULL) {
-	message(LOG_ERROR, "opendir error on current directory %s: %s",
+	message(LOG_ERROR, "opendir error on current directory %s: %s\n",
 		fulldirname, strerror(errno));
 	return 0;
     }
@@ -251,7 +252,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		    "was specified\n");
 	}
 
-	message(LOG_REALDEBUG, "taking as significant time: %s",
+	message(LOG_REALDEBUG, "taking as significant time: %s\n",
 		ctime(significant_time));
 
 	if (!sb.st_uid && !(flags & FLAG_FORCE) && !(sb.st_mode & S_IWUSR)) {
@@ -314,7 +315,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		if (!(flags & FLAG_TEST)) {
 		    if (rmdir(ent->d_name)) {
 			if (errno != ENOTEMPTY) {
-			    message(LOG_ERROR, "failed to rmdir %s/%s: %s", 
+			    message(LOG_ERROR, "failed to rmdir %s/%s: %s\n", 
 				    fulldirname, ent->d_name, strerror(errno));
 			}
 		    }
