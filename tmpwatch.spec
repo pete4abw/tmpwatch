@@ -2,11 +2,11 @@ Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
 %define version 1.7
 Version: %{version}
-Release: 1
+Release: 2
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
-BuildRoot: /var/tmp/tmpwatch-root
+BuildRoot: /var/tmp/%{name}-root
 
 %description
 The tmpwatch utility recursively searches through specified directories
@@ -16,7 +16,37 @@ for temporarily holding files (for example, /tmp).  Tmpwatch ignores
 symlinks, won't switch filesystems and only removes empty directories
 and regular files.
 
+%prep
+%setup -q
+
+%build
+make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
+
+%install
+rm -rf $RPM_BUILD_ROOT
+make PREFIX=$RPM_BUILD_ROOT install
+
+( cd $RPM_BUILD_ROOT
+  mkdir -p ./etc/cron.daily
+  echo '/usr/sbin/tmpwatch 240 /tmp /var/tmp' \
+	>> ./etc/cron.daily/tmpwatch
+  echo '/usr/sbin/tmpwatch -f 240 /var/catman/{X11R6/cat?,cat?,local/cat?}' \
+	>> ./etc/cron.daily/tmpwatch
+  chmod +x ./etc/cron.daily/tmpwatch
+)
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+/usr/sbin/tmpwatch
+/usr/man/man8/tmpwatch.8
+%config /etc/cron.daily/tmpwatch
+
 %changelog
+* Mon Jun  7 1999 Jeff Johnson <jbj@redhat.com>
+- cleanup more man pages, this time adding in cvs (#224).
+
 * Thu Apr 08 1999 Preston Brown <pbrown@redhat.com>
 - I am the new maintainer
 - fixed cleanup of directories
@@ -45,26 +75,3 @@ and regular files.
 * Sun Mar 09 1997 Erik Troan <ewt@redhat.com>
 - Rebuilt to get right permissions on the Alpha (though I have no idea
 - how they ended up wrong).
-
-%prep
-%setup
-
-%build
-make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
-
-%install
-rm -rf $RPM_BUILD_ROOT
-make PREFIX=$RPM_BUILD_ROOT install
-
-mkdir -p $RPM_BUILD_ROOT/etc/cron.daily
-echo '/usr/sbin/tmpwatch 240 /tmp /var/tmp /var/catman/cat?' \
-	> $RPM_BUILD_ROOT/etc/cron.daily/tmpwatch
-chmod +x $RPM_BUILD_ROOT/etc/cron.daily/tmpwatch
-
-%clean
-rm -rf $RPM_BUILD_ROOT
-
-%files
-/usr/sbin/tmpwatch
-/usr/man/man8/tmpwatch.8
-%config /etc/cron.daily/tmpwatch
