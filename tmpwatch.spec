@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-%define version 1.6
+%define version 1.7
 Version: %{version}
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
@@ -22,6 +22,7 @@ and regular files.
 - fixed cleanup of directories
 - added --quiet flag
 - freshen manpage
+- nice patch from Kevin Vajk <kvajk@ricochet.net> integrated
 
 * Wed Jun 10 1998 Erik Troan <ewt@redhat.com>
 - make /etc/cron.daily/tmpwatch executable

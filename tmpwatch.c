@@ -43,6 +43,12 @@ void message(int level, char * format, ...) {
       where = stderr;
       fprintf(stderr, "error: ");
     }
+    if (! S_ISDIR(sb1.st_mode)) {
+	message(LOG_ERROR, "directory %s changed right under us!!!",
+		dirname);
+	message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
+	return 1;
+    }
 
     vfprintf(stdout, format, args);
 
@@ -72,13 +78,15 @@ int safe_chdir(char * dirname) {
   }
 
   if (sb1.st_ino != sb2.st_ino) {
-    message(LOG_ERROR, "inode information changed for %s!!!",
-	    strerror(errno));
+    message(LOG_ERROR, "inode information changed for %s: %s!!!\n",
+	    dirname, strerror(errno));
     message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
+    return 1;
   } else if (sb1.st_dev != sb2.st_dev) {
-    message(LOG_ERROR, "device information changed for %s!!!",
-	    strerror(errno));
+    message(LOG_ERROR, "device information changed for %s: %s!!!\n",
+	    dirname, strerror(errno));
     message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
+    return 1;
   }
 
   return 0;
@@ -91,19 +99,26 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
   int status, pid;
   struct stat here;
   struct utimbuf utb;
-
+  
   message(LOG_DEBUG, "cleaning up directory %s\n", dirname);
-
+  
   /* Do everything in a child process so we don't have to chdir(".."),
      which would lead to a race condition. fork() on Linux is very efficient
      so this shouldn't be a big deal (probably just a exception on one page
      of stack, not bad). I should probably just keep a directory stack
      and fchdir() back up it, but it's not worth changing now. */
-
-  if (!(pid = fork())) {
-    if (safe_chdir(dirname)) return 1;
-    dir = opendir(".");
-
+  
+  pid = fork();
+  if (pid == (pid_t)-1) {
+    message(LOG_ERROR, "cannot fork: %s", strerror(errno));
+    return(1);
+  } else if (pid == (pid_t)0) {
+    if (safe_chdir(dirname)) exit(1);
+    if ( (dir = opendir(".")) == (DIR *)0 ) {
+      message(LOG_ERROR, "opendir error on current directory %s: %s",
+	      dirname, strerror(errno));
+      exit(1);
+    }                                                                       
     if (lstat(".", &here)) {
       message(LOG_ERROR, "error statting current directory %s: %s",
 	      dirname, strerror(errno));
@@ -187,12 +202,19 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
 
     } while (ent);
 
-    closedir(dir);
+    if (closedir(dir) == -1) {
+      message(LOG_ERROR, "closedir of %s failed: %s\n",
+	      dirname, strerror(errno));
+      exit(1);
+    }
 
     exit(0);
   }
 
-  waitpid(pid, &status, 0);
+  if (waitpid(pid, &status, 0) == -1) {
+    message(LOG_ERROR, "waitpid failed: %s\n",strerror(errno));
+    return 1;
+  }
 
   if (WIFEXITED(status))
     return WEXITSTATUS(status);
