@@ -73,9 +73,9 @@ void message(int level, char * format, ...)
 int safe_chdir(const char *fulldirname, const char *reldirname,
 	       dev_t st_dev, ino_t st_ino)
 {
-    struct stat64 sb1, sb2;
+    struct stat sb1, sb2;
 
-    if (lstat64(reldirname, &sb1)) {
+    if (lstat(reldirname, &sb1)) {
 	message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
 		fulldirname, strerror(errno));
 	return 1;
@@ -104,7 +104,7 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
 	return 1;
     }
 
-    if (lstat64(".", &sb2)) {
+    if (lstat(".", &sb2)) {
 	message(LOG_ERROR, "second lstat() of directory %s failed: %s\n",
 		fulldirname, strerror(errno));
 	return 1;
@@ -160,9 +160,8 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 {
     DIR *dir;
     struct dirent *ent;
-    struct stat64 sb;
+    struct stat sb, here;
     time_t *significant_time;
-    struct stat64 here;
     struct utimbuf utb;
 
     message(LOG_DEBUG, "cleaning up directory %s\n", fulldirname);
@@ -170,8 +169,8 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
     if (safe_chdir(fulldirname, reldirname, st_dev, st_ino))
 	return 0;
 
-    if (lstat64(".", &here)) {
-	message(LOG_ERROR, "error statting current directory %s: %s",
+    if (lstat(".", &here)) {
+	message(LOG_ERROR, "error stat()ing current directory %s: %s",
 		fulldirname, strerror(errno));
 	return 0;
     }
@@ -206,7 +205,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	}
 	if (!ent) break;
 
-	if (lstat64(ent->d_name, &sb)) {
+	if (lstat(ent->d_name, &sb)) {
 	    message(LOG_ERROR, "failed to lstat %s/%s: %s\n",
 		    fulldirname, ent->d_name, strerror(errno));
 	    continue;
@@ -415,7 +414,8 @@ int main(int argc, char ** argv) {
     unsigned int grace;
     unsigned int killTime, long_index;
     int flags = 0, arg;
-    struct stat64 sb;
+    struct stat sb;
+    
 #ifndef __hpux
     struct option options[] = {
 	{ "all", 0, 0, 'a' },
@@ -510,7 +510,7 @@ int main(int argc, char ** argv) {
     setvbuf(stdout, NULL, _IOLBF, 0);
       
     while (optind < argc) {
-	if (lstat64(argv[optind], &sb)) {
+	if (lstat(argv[optind], &sb)) {
 	    message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
 		    argv[optind], strerror(errno));
 	    exit(1);

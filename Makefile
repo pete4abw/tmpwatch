@@ -1,16 +1,16 @@
 VERSION=$(shell awk '/Version:/ { print $$2 }' tmpwatch.spec)
 CVSTAG = r$(subst .,-,$(VERSION))
 
-CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_GNU_SOURCE
+CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 ifdef HP_UX
-    BASEDIR=/usr/local
-    MANDIR=$(BASEDIR)/man
+    PREFIX=/usr/local
+    MANDIR=$(PREFIX)/man
     INSTALL=./install-sh
     CC=gcc
 else
-    BASEDIR=/usr
-    MANDIR=$(BASEDIR)/man
+    PREFIX=/usr
+    MANDIR=$(PREFIX)/share/man
     INSTALL=install
 endif
 
