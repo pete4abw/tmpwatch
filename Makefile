@@ -1,7 +1,7 @@
 VERSION=$(shell awk '/Version:/ { print $$2 }' tmpwatch.spec)
 CVSTAG = r$(subst .,-,$(VERSION))
 
-CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\"
+CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_GNU_SOURCE
 
 ifdef HP_UX
     BASEDIR=/usr/local

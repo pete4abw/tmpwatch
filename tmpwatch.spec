@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.7.4
+Version: 2.8
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
@@ -20,7 +20,7 @@ removes empty directories and regular files.
 %setup -q
 
 %build
-make RPM_OPT_FLAGS="$RPM_OPT_FLAGS -D_GNU_SOURCE"
+make
 
 %install
 rm -rf %{buildroot}
@@ -49,6 +49,11 @@ rm -rf %{buildroot}
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Mon Aug  6 2001 Preston Brown <pbrown@redhat.com> 2.8-1
+- added a "nodirs" option which inhibits removal of empty directories.
+- Integrated race condition fixes from Martin Macok (#50148)
+- do not try to remove ext3 journal files (#50522)
+
 * Tue Jul  3 2001 Preston Brown <pbrown@redhat.com> 2.7.4-1
 - fix typo in cron script
 
