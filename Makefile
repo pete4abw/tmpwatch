@@ -1,5 +1,6 @@
 VERSION=$(shell awk '/Version:/ { print $$2 }' tmpwatch.spec)
-CVSTAG = r$(subst .,-,$(VERSION))
+RELEASE=$(shell awk '/Release:/ { print $$2 }' tmpwatch.spec)
+CVSTAG = tmpwatch_$(subst .,-,$(VERSION))_$(subst .,-,$(RELEASE))
 CVSROOT = $(shell cat CVS/Root)
 
 CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
@@ -30,8 +31,11 @@ install: all
 clean:
 	rm -f tmpwatch
 
-tag:
+force-tag:
 	cvs tag -F $(CVSTAG) .
+
+tag:
+	cvs tag -c $(CVSTAG) .
 
 archive:
 	@rm -rf /tmp/tmpwatch-$(VERSION) /tmp/tmpwatch
@@ -40,4 +44,3 @@ archive:
 	@dir=$$PWD; cd /tmp; tar cvzf $$dir/tmpwatch-$(VERSION).tar.gz tmpwatch-$(VERSION)
 	@rm -rf /tmp/tmpwatch-$(VERSION)
 	@echo "The archive is in tmpwatch-$(VERSION).tar.gz"
-
