@@ -13,9 +13,16 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#ifndef __hpux
+#ifdef __linux
+
 #include <getopt.h>
 #include <paths.h>
+
+#define _HAVE_GETOPT_LONG
+#define _HAVE_FUSER
+#define FUSER_PATH "/sbin/fuser"
+#define FUSER_ARGS "-s"
+
 #endif
 
 #include <stdarg.h>
@@ -29,7 +36,11 @@
 #include <sys/wait.h>
 #include <utime.h>
 #include <unistd.h>
+#ifdef __sun
+#include <sys/mntent.h>
+#else
 #include <mntent.h>
+#endif
 
 #define LOG_REALDEBUG	1
 #define LOG_DEBUG	2
@@ -41,11 +52,11 @@
 #define FLAG_FORCE	(1 << 0)
 #define FLAG_ALLFILES	(1 << 1)   /* normally just files, dirs are removed */
 #define FLAG_TEST	(1 << 2)
-#define FLAG_ATIME     (1 << 3)
-#define FLAG_MTIME     (1 << 4)
-#define FLAG_FUSER     (1 << 5)
-#define FLAG_CTIME     (1 << 6)
-#define FLAG_NODIRS    (1 << 7)
+#define FLAG_ATIME	(1 << 3)
+#define FLAG_MTIME	(1 << 4)
+#define FLAG_FUSER	(1 << 5)
+#define FLAG_CTIME	(1 << 6)
+#define FLAG_NODIRS	(1 << 7)
 
 /* Do not remove lost+found directories if owned by this UID */
 #define LOSTFOUND_UID 0
@@ -126,6 +137,7 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
     return 0;
 }
 
+#ifdef _HAVE_FUSER
 int check_fuser(const char *dirname, const char *filename)
 {
     int ret;
@@ -138,14 +150,14 @@ int check_fuser(const char *dirname, const char *filename)
     snprintf(dir, sizeof(dir), "%s", filename);
     pid = fork();
     if (pid == 0) {
-    	ret = execle("/sbin/fuser", "/sbin/fuser", "-s", dir, NULL, NULL);
+    	ret = execle(FUSER_PATH, FUSER_PATH, FUSER_ARGS, dir, NULL, NULL);
     } else {
 	waitpid(pid, &ret, 0);
     }
 
-    /* flip-flop: fuser returns zero if the device or file is being accessed */
     return (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0));
 }
+#endif
 
 time_t *max( time_t *x, time_t *y )
 {
@@ -297,13 +309,15 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    if (*significant_time >= killTime)
 		continue;
 
+#ifdef _HAVE_FUSER
 	    if ((flags & FLAG_FUSER) &&
-		(access("/sbin/fuser", R_OK | X_OK) == 0) &&
+		(access(FUSER_PATH, R_OK | X_OK) == 0) &&
 		check_fuser(fulldirname, ent->d_name)) {
 		message(LOG_VERBOSE, "file is already in use or open: %s\n",
 			ent->d_name);
 		continue;
 	    }
+#endif
 
 	    /* we should try to remove the directory after cleaning up its
 	       contents, as it should contain no files.  Skip if we have
@@ -325,7 +339,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    if (*significant_time >= killTime)
 		continue;
 
-#ifndef __hpux
+#ifdef __linux
 	    /* check if it is an ext3 journal file */
 	    if ((strcmp(ent->d_name, ".journal") == 0) &&
 		(sb.st_uid == 0)) {
@@ -359,12 +373,14 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    if ((flags & FLAG_ALLFILES) ||
 		S_ISREG(sb.st_mode) ||
 		S_ISLNK(sb.st_mode)) {
-		if (flags & FLAG_FUSER && !access("/sbin/fuser", R_OK|X_OK) &&
+#ifdef _HAVE_FUSER
+		if (flags & FLAG_FUSER && !access(FUSER_PATH, R_OK|X_OK) &&
 		    check_fuser(fulldirname, ent->d_name)) {
 		    message(LOG_VERBOSE, "file is already in use or open: %s/%s\n",
 			    fulldirname, ent->d_name);
 		    continue;
 		}
+#endif
 	    
 		message(LOG_VERBOSE, "removing file %s/%s\n",
 			fulldirname, ent->d_name);
@@ -405,7 +421,7 @@ void printCopyright(void) {
 void usage(void) {
     printCopyright();
     fprintf(stderr, "\n");
-#ifndef __hpux
+#ifdef _HAVE_GETOPT_LONG
     fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtv] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] <hours-untouched> <dirs>\n");
 #else
     fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtv] <hours-untouched> <dirs>\n");
@@ -419,7 +435,7 @@ int main(int argc, char ** argv) {
     int flags = 0, arg;
     struct stat sb;
     
-#ifndef __hpux
+#ifdef _HAVE_GETOPT_LONG
     struct option options[] = {
 	{ "all", 0, 0, 'a' },
 	{ "nodirs", 0, 0, 'd' },
@@ -428,20 +444,26 @@ int main(int argc, char ** argv) {
 	{ "atime", 0, 0, 'u' },
 	{ "ctime", 0, 0, 'c' },
 	{ "quiet", 0, 0, 'q' },
+#ifdef _HAVE_FUSER
 	{ "fuser", 0, 0, 's' },
+#endif
 	{ "test", 0, 0, 't' },
 	{ "verbose", 0, 0, 'v' },
 	{ 0, 0, 0, 0 }, 
     };
 #endif
+#ifdef _HAVE_FUSER
     const char optstring[] = "adcfmqstuv";
+#else
+    const char optstring[] = "adcfmqtuv";
+#endif
 
     if (argc == 1) usage();
 
     while (1) {
 	long_index = 0;
 
-#ifndef __hpux
+#ifdef _HAVE_GETOPT_LONG
 	arg = getopt_long(argc, argv, optstring, options, &long_index);
 #else
 	arg = getopt(argc, argv, optstring);
@@ -459,10 +481,11 @@ int main(int argc, char ** argv) {
 	case 'f':
 	    flags |= FLAG_FORCE;
 	    break;
+#ifdef _HAVE_FUSER
 	case 's':
 	    flags |= FLAG_FUSER;
 	    break;
-	
+#endif
 	case 't':
 	    flags |= FLAG_TEST;
 	    /* fallthrough */
@@ -482,6 +505,7 @@ int main(int argc, char ** argv) {
 	    flags |= FLAG_CTIME;
 	    break;
 	case '?':
+	default:
 	    usage();
 	}
     }

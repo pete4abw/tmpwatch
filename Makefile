@@ -2,17 +2,27 @@ VERSION=$(shell awk '/^Version:/ { print $$2 }' tmpwatch.spec)
 RELEASE=$(shell awk '/^Release:/ { print $$2 }' tmpwatch.spec)
 CVSTAG = tmpwatch_$(subst .,-,$(VERSION))_$(subst .,-,$(RELEASE))
 CVSROOT = $(shell cat CVS/Root)
+OS_NAME=$(shell uname -s)
 
 CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
-ifdef HP_UX
+ifeq ($(OS_NAME),HP-UX)
     ROOT=/
     PREFIX=/usr/local
     MANDIR=$(PREFIX)/man
     SBINDIR=$(PREFIX)/sbin
     INSTALL=./install-sh
     CC=gcc
-else
+endif
+ifeq ($(OS_NAME),SunOS)
+    ROOT=/
+    PREFIX=/usr/local
+    MANDIR=$(PREFIX)/man
+    SBINDIR=$(PREFIX)/sbin
+    INSTALL=./install-sh
+    CC=gcc
+endif
+ifeq ($(OS_NAME),Linux)
     ROOT=/
     PREFIX=/usr
     SBINDIR=$(PREFIX)/sbin

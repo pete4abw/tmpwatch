@@ -24,7 +24,7 @@ atime to see if that explains the problem.
 
 If the -\-atime, -\-ctime or -\-mtime options are used in combination,
 the decision about deleting a file will be based on the maximum of
-this times.
+these times.
 
 The \fIhours\fR parameter defines the threshold for removing files. If
 the file has not been accessed for \fIhours\fR hours, the file is removed.
@@ -72,7 +72,7 @@ implies \fB\-v\fR.
 Attempt to use the "fuser" command to see if a file is already open
 before removing it.  Not enabled by default.   Does help in some
 circumstances, but not all.  Dependent on fuser being installed in
-/sbin.
+/sbin.  Not supported on HP-UX or Solaris.
 
 .TP
 \fB-v, -\-verbose\fR
