@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.3
-Release: 1
+Version: 2.4
+Release: 2
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
@@ -30,7 +30,9 @@ make PREFIX=$RPM_BUILD_ROOT install
   mkdir -p ./etc/cron.daily
   echo '/usr/sbin/tmpwatch 240 /tmp /var/tmp' \
 	>> ./etc/cron.daily/tmpwatch
-  echo '/usr/sbin/tmpwatch -f 240 /var/catman/{X11R6/cat?,cat?,local/cat?}' \
+  echo '[ -d /var/cache/man ] && /usr/sbin/tmpwatch -f 240 /var/cache/man/{X11R6/cat?,cat?,local/cat?}' \
+	>> ./etc/cron.daily/tmpwatch
+  echo '[ -d /var/catman ] && /usr/sbin/tmpwatch -f 240 /var/catman/{X11R6/cat?,cat?,local/cat?}' \
 	>> ./etc/cron.daily/tmpwatch
   chmod +x ./etc/cron.daily/tmpwatch
 )
@@ -44,6 +46,9 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Wed May 17 2000 Preston Brown <pbrown@redhat.com>
+- support /var/cache/man and /var/catman (FHS 2.1 compliance).
+
 * Fri May 05 2000 Preston Brown <pbrown@redhat.com>
 - support for CTIME from jik@kamens.brookline.ma.us
 - fixes for fuser checks from Ian Burrell <iburrell@digital-integrity.com>.
