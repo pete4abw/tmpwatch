@@ -42,12 +42,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 /usr/sbin/tmpwatch
-/usr/man/man8/tmpwatch.8*
+/usr/share/man/man8/tmpwatch.8*
 %config /etc/cron.daily/tmpwatch
 
 %changelog
 * Thu May 18 2000 Preston Brown <pbrown@redhat.com>
 - don't complain about failure to remove non-empty directories.
+- fix man page path
 
 * Wed May 17 2000 Preston Brown <pbrown@redhat.com>
 - support /var/cache/man and /var/catman (FHS 2.1 compliance).
