@@ -226,10 +226,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
       /* restore access time on the directory to original time */
       utb.actime = sb.st_atime; /* atime */
       utb.modtime = sb.st_mtime; /* mtime */
-      if(utime(ent->d_name, &utb) == -1) {
-        message(LOG_ERROR, "could not fix utime for %s/%s: %s\n",
-		dirname, ent->d_name, strerror(errno));
-      }
+      utime(ent->d_name, &utb);
 
       if (*significant_time >= killTime)
         continue;

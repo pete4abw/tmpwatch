@@ -49,7 +49,6 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Thu Sep  7 2000 Nalin Dahyabhai <nalin@redhat.com>
 - rework to not have to fork() (#17286)
-- error check the utime() call
 
 * Sat Jun 17 2000 Matt Wilson <msw@redhat.com>
 - defattr
