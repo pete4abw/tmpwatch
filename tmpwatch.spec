@@ -24,7 +24,7 @@ make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make PREFIX=$RPM_BUILD_ROOT MANDIR=${_mandir} install
+make PREFIX=$RPM_BUILD_ROOT MANDIR=%{_mandir} install
 
 ( cd $RPM_BUILD_ROOT
   mkdir -p ./etc/cron.daily
