@@ -115,8 +115,8 @@ int check_fuser(const char *dirname, const char *filename)
 
 int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
 {
-  DIR * dir;
-  struct dirent * ent;
+  DIR *dir;
+  struct dirent *ent;
   struct stat sb;
   time_t *significant_time = NULL;
   int status, pid;
@@ -200,8 +200,9 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
       }
       /* What? One or the other should be set by now... */
       else {
-	message(LOG_FATAL, "error in cleanupDirectory: no selection method "
-	    "was specified\n");
+	  significant_time = 0;
+	  message(LOG_FATAL, "error in cleanupDirectory: no selection method "
+		  "was specified\n");
       }
 
       if (!sb.st_uid && !(flags & FLAGS_FORCE) && 
