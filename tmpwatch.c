@@ -200,7 +200,6 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
       }
       /* What? One or the other should be set by now... */
       else {
-	  significant_time = 0;
 	  message(LOG_FATAL, "error in cleanupDirectory: no selection method "
 		  "was specified\n");
       }
