@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.7.1
+Version: 2.7.2
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
@@ -20,7 +20,7 @@ removes empty directories and regular files.
 %setup -q
 
 %build
-make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
+make RPM_OPT_FLAGS="$RPM_OPT_FLAGS -D_GNU_SOURCE"
 
 %install
 rm -rf %{buildroot}
@@ -49,6 +49,10 @@ rm -rf %{buildroot}
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Fri May 11 2001 Trond Eivind Glomsrød <teg@redhat.com>
+- Handle directories with large files
+- fix some warnings during compilation
+
 * Thu Mar 29 2001 Preston Brown <pbrown@redhat.com>
 - fixed longstanding bug where directories removed while in test mode.
 
