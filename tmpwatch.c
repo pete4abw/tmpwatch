@@ -331,7 +331,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		struct mntent *mnt;
 		int foundflag = 0;
 		
-		if ((fp = setmntent(_PATH_MOUNTED, "r")) != 0) {
+		if ((fp = setmntent(_PATH_MOUNTED, "r")) == NULL) {
 		    message(LOG_ERROR, "failed to open %s for reading\n",
 			    _PATH_MOUNTED);
 		    continue;

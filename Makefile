@@ -4,12 +4,16 @@ CVSTAG = r$(subst .,-,$(VERSION))
 CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\" -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
 
 ifdef HP_UX
+    ROOT=/
     PREFIX=/usr/local
     MANDIR=$(PREFIX)/man
+    SBINDIR=$(PREFIX)/sbin
     INSTALL=./install-sh
     CC=gcc
 else
+    ROOT=/
     PREFIX=/usr
+    SBINDIR=$(PREFIX)/sbin
     MANDIR=$(PREFIX)/share/man
     INSTALL=install
 endif
@@ -17,10 +21,10 @@ endif
 all: tmpwatch
 
 install: all
-	[ -d $(PREFIX)$(SBINDIR) ] || mkdir -p $(PREFIX)$(SBINDIR)
-	[ -d $(PREFIX)$(MANDIR)/man8 ] || mkdir -p $(PREFIX)$(MANDIR)/man8
-	$(INSTALL) -s -m 755 tmpwatch $(PREFIX)$(SBINDIR)/tmpwatch
-	$(INSTALL) -m 644 tmpwatch.8 $(PREFIX)$(MANDIR)/man8/tmpwatch.8
+	[ -d $(ROOT)$(SBINDIR) ] || mkdir -p $(ROOT)$(SBINDIR)
+	[ -d $(ROOT)$(MANDIR)/man8 ] || mkdir -p $(ROOT)$(MANDIR)/man8
+	$(INSTALL) -s -m 755 tmpwatch $(ROOT)$(SBINDIR)/tmpwatch
+	$(INSTALL) -m 644 tmpwatch.8 $(ROOT)$(MANDIR)/man8/tmpwatch.8
 
 clean:
 	rm -f tmpwatch

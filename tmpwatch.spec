@@ -24,7 +24,7 @@ make
 
 %install
 rm -rf %{buildroot}
-make PREFIX=%{buildroot} SBINDIR=%{_sbindir} MANDIR=%{_mandir} install
+make root=%{buildroot} SBINDIR=%{_sbindir} MANDIR=%{_mandir} install
 
 mkdir -p %{buildroot}/etc/cron.daily
 cat > %{buildroot}/etc/cron.daily/tmpwatch <<EOF
@@ -48,6 +48,9 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/cron.daily/tmpwatch
 
 %changelog
+* Thu Nov  8 2001 Preston Brown <pbrown@redhat.com>
+- define default SBINDIR in Makefile
+
 * Wed Aug 29 2001 Preston Brown <pbrown@redhat.com>
 - cron script fix (#52785)
 
