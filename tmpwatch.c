@@ -270,7 +270,7 @@ int main(int argc, char ** argv) {
     { "verbose", 0, 0, 'v' },
     { "quiet", 0, 0, 'q' },
     { "atime", 0, 0, GETOPT_ATIME },
-    { "mtiem", 0, 0, GETOPT_MTIME },
+    { "mtime", 0, 0, GETOPT_MTIME },
   };
 
   if (argc == 1) usage();
