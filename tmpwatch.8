@@ -1,9 +1,10 @@
-.TH TMPWATCH 8 "Mon Mar 24 1997"
+.TH TMPWATCH 8 "Thu Apr 08 1999"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
-\fBtmpwatch\fR [-fav] [--verbose] [--force] [--all] [--test] <hours> <dirs>
+\fBtmpwatch\fR [-favq] [--verbose] [--force] [--all] [--test] 
+               [--quiet] <hours> <dirs>
 
 .SH DESCRIPTION
 \fBtmpwatch\fR recursively removes files which haven't been accessed
@@ -46,12 +47,13 @@ Print a verbose display. Two levels of verboseness are available -- use
 this option twice to get the most verbose output.
 
 .SH SEE ALSO
-.IR cron (1)
-.IR ls (1)
-.IR rm (1)
+.IR cron (1),
+.IR ls (1),
+.IR rm (1),
 .IR stat (1)
 
-.SH AUTHOR
+.SH AUTHORS
 .nf
 Erik Troan <ewt@redhat.com>
+Preston Brown <pbrown@redhat.com>
 .fi
