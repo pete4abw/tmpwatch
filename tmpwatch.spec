@@ -1,17 +1,20 @@
-Summary: Cleans up files in directories based on their age
+Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
 %define version 1.6
 Version: %{version}
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
-Group: Utilities/System
+Group: System Environment/Base
 BuildRoot: /var/tmp/tmpwatch-root
 
 %description
-This package provides a program that can be used to clean out directories. It
-recursively searches the directory (ignoring symlinks) and removes files that
-haven't been accessed in a user-specified amount of time.
+The tmpwatch utility recursively searches through specified directories
+and removes files which have not been accessed in a specified period of
+time.  Tmpwatch is normally used to clean up directories which are used
+for temporarily holding files (for example, /tmp).  Tmpwatch ignores
+symlinks, won't switch filesystems and only removes empty directories
+and regular files.
 
 %changelog
 * Thu Apr 08 1999 Preston Brown <pbrown@redhat.com>
