@@ -1,6 +1,6 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.8
+Version: 2.8.1
 Release: 0.7.x
 Source: %{name}-%{version}.tar.gz
 License: GPL
@@ -50,6 +50,7 @@ rm -rf %{buildroot}
 %changelog
 * Thu Nov  8 2001 Preston Brown <pbrown@redhat.com>
 - define default SBINDIR in Makefile
+- incorrect boolean comparison fix
 
 * Wed Aug 29 2001 Preston Brown <pbrown@redhat.com>
 - cron script fix (#52785)
