@@ -39,12 +39,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 /usr/sbin/tmpwatch
-/usr/man/man8/tmpwatch.8
+/usr/man/man8/tmpwatch.8*
 %config /etc/cron.daily/tmpwatch
 
 %changelog
 * Wed Feb 02 2000 Cristian Gafton <gafton@redhat.com>
 - fix description
+- man pages are compressed
 
 * Tue Jan 18 2000 Preston Brown <pbrown@redhat.com>
 - null terminal opt struct (#7836)
