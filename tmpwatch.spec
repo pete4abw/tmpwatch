@@ -45,7 +45,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Feb 14 2000 Preston Brown <pbrown@redhat.com>
-- use fuser to see if file in use before removing
+- option to use fuser to see if file in use before removing
 
 * Wed Feb 02 2000 Cristian Gafton <gafton@redhat.com>
 - fix description

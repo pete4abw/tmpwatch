@@ -1,10 +1,10 @@
-.TH TMPWATCH 8 "Wed Jan 12 2000"
+.TH TMPWATCH 8 "Mon Feb 14 2000"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
-\fBtmpwatch\fR [-u|-m] [-faqtv] [--verbose] [--force] [--all] [--test] 
-               [--atime|--mtime] [--quiet] <hours> <dirs>
+\fBtmpwatch\fR [-u|-m] [-faqstv] [--verbose] [--force] [--all] [--test] 
+               [--fuser ] [--atime|--mtime] [--quiet] <hours> <dirs>
 
 .SH DESCRIPTION
 \fBtmpwatch\fR recursively removes files which haven't been accessed
@@ -53,6 +53,13 @@ Doesn't remove files, but goes through the motions of removing them. This
 implies \fB\-v\fR.
 
 .TP
+\fB-s, -\-fuser\fR
+Attempt to use the "fuser" command to see if a file is already open
+before removing it.  Not enabled by default.   Does help in some
+circumstances, but not all.  Dependent on fuser being installed in
+/sbin.
+
+.TP
 \fB-v, -\-verbose\fR
 Print a verbose display. Two levels of verboseness are available -- use
 this option twice to get the most verbose output.
@@ -60,7 +67,8 @@ this option twice to get the most verbose output.
 .SH SEE ALSO
 .IR cron (1),
 .IR ls (1),
-.IR rm (1)
+.IR rm (1),
+.IR fuser (1)
 
 .SH WARNINGS
 GNU-style long options are not supported on HP-UX.
