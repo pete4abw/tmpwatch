@@ -6,6 +6,7 @@
 
 #include <dirent.h>
 #include <errno.h>
+#include <fcntl.h>
 #ifndef __hpux
     #include <getopt.h>
 #endif
@@ -107,10 +108,7 @@ int check_fuser(const char *dirname, const char *filename)
     ret = system(cmd);
 
     // flip flop
-    if (ret == 0)
-	return 1;
-    else
-	return 0;
+    return (ret == 0);
 }
 
 int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
@@ -119,7 +117,6 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
   struct dirent *ent;
   struct stat sb;
   time_t *significant_time = NULL;
-  int status, pid;
   struct stat here;
   struct utimbuf utb;
 
@@ -131,168 +128,170 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
      of stack, not bad). I should probably just keep a directory stack
      and fchdir() back up it, but it's not worth changing now. */
   
-  pid = fork();
-  if (pid == (pid_t)-1) {
-    message(LOG_ERROR, "cannot fork: %s", strerror(errno));
-    return(1);
-  } else if (pid == (pid_t)0) {
-    if (safe_chdir(dirname)) exit(1);
-    if ( (dir = opendir(".")) == (DIR *)0 ) {
-      message(LOG_ERROR, "opendir error on current directory %s: %s",
-	      dirname, strerror(errno));
-      exit(1);
-    }                                                                       
-    if (lstat(".", &here)) {
-      message(LOG_ERROR, "error statting current directory %s: %s",
-	      dirname, strerror(errno));
-      exit(1);
-    }
+  if (safe_chdir(dirname))
+    return 0;
 
-    if (!dir) {
-      message(LOG_ERROR, "error opening directory %s: %s\n", dirname,
+  if ((dir = opendir(".")) == NULL) {
+    message(LOG_ERROR, "opendir error on current directory %s: %s",
+	    dirname, strerror(errno));
+    return 0;
+  }
+
+  if (lstat(".", &here)) {
+    message(LOG_ERROR, "error statting current directory %s: %s",
+	    dirname, strerror(errno));
+    return 0;
+  }
+
+  do {
+    errno = 0;
+    ent = readdir(dir);
+    if (errno) {
+      message(LOG_ERROR, "error reading directory entry: %s\n", 
 	      strerror(errno));
-      exit(1);
+      return 0;
     }
+    if (!ent) break;
 
-    do {
-      errno = 0;
-      ent = readdir(dir);
-      if (errno) {
-	message(LOG_ERROR, "error reading directory entry: %s\n", 
-		strerror(errno));
-	exit(1);
-      }
-      if (!ent) break;
-
-      if ((ent->d_name[0] == '.' && (ent->d_name[1] == '\0' || 
-				     ((ent->d_name[1] == '.') && (ent->d_name[2] == '\0'))))) 
-	continue;
+    /* don't go crazy with the current directory or its parent */
+    if ((strcmp(ent->d_name, ".") == 0) || (strcmp(ent->d_name, "..") == 0))
+      continue;
       
-      /* skip over lost+found */
-      if (strcmp(ent->d_name, "lost+found") == 0)
-	continue;
+    /* skip over directories named lost+found */
+    if ((strcmp(ent->d_name, "lost+found") == 0) && S_ISDIR(sb.st_mode))
+      continue;
 
-      message(LOG_REALDEBUG, "found directory entry %s\n", ent->d_name);
+    message(LOG_REALDEBUG, "found directory entry %s\n", ent->d_name);
 
-      if (lstat(ent->d_name, &sb)) {
-	message(LOG_ERROR, "failed to lstat %s/%s: %s\n", dirname, 
-		ent->d_name, strerror(errno));
-	continue;
-      }
-
-      /* Set significant_time to point at the significant field of sb -
-       * either st_atime or st_mtime depending on the flag selected. - alh */
-      if (flags & FLAGS_ATIME)
-	significant_time = &sb.st_atime;
-      else if (flags & FLAGS_MTIME)
-	significant_time = &sb.st_mtime;
-      else if (flags & FLAGS_CTIME) {
-	/* Even when we were told to use ctime, for directories we use
-	   mtime, because when a file in a directory is deleted, its
-	   ctime will change, and there's no way we can change it
-	   back.  Therefore, we use mtime rather than ctime so that
-	   directories won't hang around for along time after their
-	   contents are removed. */
-	if (S_ISDIR(sb.st_mode))
-	  significant_time = &sb.st_mtime;
-	else
-	  significant_time = &sb.st_ctime;
-      }
-      /* What? One or the other should be set by now... */
-      else {
-	  message(LOG_FATAL, "error in cleanupDirectory: no selection method "
-		  "was specified\n");
-      }
-
-      if (!sb.st_uid && !(flags & FLAGS_FORCE) && 
-	  !(sb.st_mode & S_IWUSR)) {
-	message(LOG_DEBUG, "non-writeable file owned by root "
-		"skipped: %s\n", ent->d_name);;
-	continue;
-      } else if (sb.st_dev != here.st_dev) {
-	message(LOG_VERBOSE, "file on different device skipped: %s\n",
-		ent->d_name);
-	continue;
-      } else if (S_ISDIR(sb.st_mode)) {
-
-	cleanupDirectory(ent->d_name, killTime, flags);
-
-	/* restore access time on the directory to original time */
-	utb.actime = sb.st_atime; /* atime */
-	utb.modtime = sb.st_mtime; /* mtime */
-	utime(ent->d_name, &utb);
-	 
-	if (*significant_time >= killTime) continue;
-	
-	if (flags & FLAGS_FUSER &&
-	    !access("/sbin/fuser", R_OK|X_OK) &&
-	    check_fuser(dirname, ent->d_name)) {
-	    message(LOG_VERBOSE, "file is already in use or open: %s\n",
-		    ent->d_name);
-	    continue;
-	}
-
-	/* we should try to remove the directory if it contains no files. */
-	
-	message(LOG_VERBOSE, "removing directory %s\n", ent->d_name);
-	if (!(flags & FLAGS_TEST)) {
-	    if (rmdir(ent->d_name)) {
-		if (errno != ENOTEMPTY) {
-		    message(LOG_ERROR, "failed to rmdir %s: %s\n", 
-			    dirname, ent->d_name);
-		    message(LOG_ERROR, "the error was: %s\n",strerror(errno));
-		}
-	    }
-	} else {
-	    rmdir(ent->d_name);
-	}
-      } else {
-	  if (*significant_time >= killTime) continue;
-	  
-	  if ((flags & FLAGS_ALLFILES) ||
-	      (S_ISREG(sb.st_mode)) ||
-	      S_ISLNK(sb.st_mode)) {
-	      if (flags & FLAGS_FUSER && !access("/sbin/fuser", R_OK|X_OK) &&
-		  check_fuser(dirname, ent->d_name)) {
-		  message(LOG_VERBOSE, "file is already in use or open: %s\n",
-			  ent->d_name);
-		  continue;
-	      }
-	      
-	      message(LOG_VERBOSE, "removing file %s/%s\n", 
-		      dirname, ent->d_name);
-	      
-	      if (!(flags & FLAGS_TEST)) {
-		  if (unlink(ent->d_name)) 
-		      message(LOG_ERROR, "failed to unlink %s: %s\n", 
-			      dirname, ent->d_name);
-	      }
-	  }
-      }
-    } while (ent);
-
-    if (closedir(dir) == -1) {
-      message(LOG_ERROR, "closedir of %s failed: %s\n",
-	      dirname, strerror(errno));
-      exit(1);
+    if (lstat(ent->d_name, &sb)) {
+      message(LOG_ERROR, "failed to lstat %s/%s: %s\n", dirname, 
+	      ent->d_name, strerror(errno));
+      continue;
     }
 
-    exit(0);
+    /* Set significant_time to point at the significant field of sb -
+     * either st_atime or st_mtime depending on the flag selected. - alh */
+    if (flags & FLAGS_ATIME)
+      significant_time = &sb.st_atime;
+    else if (flags & FLAGS_MTIME)
+      significant_time = &sb.st_mtime;
+    else if (flags & FLAGS_CTIME) {
+      /* Even when we were told to use ctime, for directories we use
+	 mtime, because when a file in a directory is deleted, its
+	 ctime will change, and there's no way we can change it
+	 back.  Therefore, we use mtime rather than ctime so that
+	 directories won't hang around for along time after their
+	 contents are removed. */
+      if (S_ISDIR(sb.st_mode))
+	significant_time = &sb.st_mtime;
+      else
+	significant_time = &sb.st_ctime;
+    }
+    /* What? One or the other should be set by now... */
+    else {
+      message(LOG_FATAL, "error in cleanupDirectory: no selection method "
+	      "was specified\n");
+    }
+
+    if (!sb.st_uid && !(flags & FLAGS_FORCE) && !(sb.st_mode & S_IWUSR)) {
+      message(LOG_DEBUG, "non-writeable file owned by root "
+	      "skipped: %s\n", ent->d_name);;
+      continue;
+    } else if (sb.st_dev != here.st_dev) {
+      message(LOG_VERBOSE, "file on different device skipped: %s\n",
+	      ent->d_name);
+      continue;
+    } else if (S_ISDIR(sb.st_mode)) {
+      int dd = open(".", O_RDONLY);
+      if(dd != -1) {
+        char *dir;
+	dir = malloc(strlen(dirname) + strlen(ent->d_name) + 2);
+	if(dir != NULL) {
+          strcpy(dir, dirname);
+          strcat(dir, "/");
+	  strcat(dir, ent->d_name);
+          if(cleanupDirectory(dir, killTime, flags) == 0) {
+	    message(LOG_ERROR, "cleanup failed in %s: %s\n", dir,
+		    strerror(errno));
+          }
+	  free(dir);
+	}
+        fchdir(dd);
+        close(dd);
+      } else {
+        message(LOG_ERROR, "could not perform cleanup in %s/%s: %s\n",
+		dirname, ent->d_name, strerror(errno));
+      }
+
+      /* restore access time on the directory to original time */
+      utb.actime = sb.st_atime; /* atime */
+      utb.modtime = sb.st_mtime; /* mtime */
+      if(utime(ent->d_name, &utb) == -1) {
+        message(LOG_ERROR, "could not fix utime for %s/%s: %s\n",
+		dirname, ent->d_name, strerror(errno));
+      }
+
+      if (*significant_time >= killTime)
+        continue;
+
+      if (flags & FLAGS_FUSER &&
+	  !access("/sbin/fuser", R_OK|X_OK) &&
+	  check_fuser(dirname, ent->d_name)) {
+        message(LOG_VERBOSE, "file is already in use or open: %s\n",
+	        ent->d_name);
+        continue;
+      }
+
+      /* we should try to remove the directory if it contains no files. */
+      message(LOG_VERBOSE, "removing directory %s/%s\n", dirname, ent->d_name);
+
+      if (!(flags & FLAGS_TEST)) {
+        if (rmdir(ent->d_name)) {
+	  if (errno != ENOTEMPTY) {
+	    message(LOG_ERROR, "failed to rmdir %s/%s: %s", 
+		    dirname, ent->d_name, strerror(errno));
+	  }
+        }
+      } else {
+        rmdir(ent->d_name);
+      }
+    } else {
+      if (*significant_time >= killTime)
+        continue;
+
+      if ((flags & FLAGS_ALLFILES) ||
+	  S_ISREG(sb.st_mode) ||
+	  S_ISLNK(sb.st_mode)) {
+        if (flags & FLAGS_FUSER && !access("/sbin/fuser", R_OK|X_OK) &&
+	  check_fuser(dirname, ent->d_name)) {
+	  message(LOG_VERBOSE, "file is already in use or open: %s\n",
+		  ent->d_name);
+	  continue;
+        }
+
+        message(LOG_VERBOSE, "removing file %s/%s\n",
+		dirname, ent->d_name);
+
+        if (!(flags & FLAGS_TEST)) {
+	  if (unlink(ent->d_name)) 
+	    message(LOG_ERROR, "failed to unlink %s: %s\n", 
+		    dirname, ent->d_name);
+        }
+      }
+    }
+  } while (ent);
+
+  if (closedir(dir) == -1) {
+    message(LOG_ERROR, "closedir of %s failed: %s\n",
+	    dirname, strerror(errno));
+    return 0;
   }
 
-  if (waitpid(pid, &status, 0) == -1) {
-    message(LOG_ERROR, "waitpid failed: %s\n",strerror(errno));
-    return 1;
-  }
-
-  if (WIFEXITED(status))
-    return WEXITSTATUS(status);
-
-  return 0;
+  return 1;
 }
 
 void printCopyright(void) {
-  fprintf(stderr, "tmpwatch " VERSION " - (c) 1997, 1999 Red Hat Software\n");
+  fprintf(stderr, "tmpwatch " VERSION " - (c) 1997, 1999, 2000 Red Hat, Inc.\n");
   fprintf(stderr, "This may be freely redistributed under the terms of "
 	  "the GNU Public License.\n");
 }
@@ -420,7 +419,10 @@ int main(int argc, char ** argv) {
       message(LOG_DEBUG, "initial directory %s is a symlink -- "
 	      "skipping\n", argv[optind]);
     } else {
-      cleanupDirectory(argv[optind], killTime, flags);
+      if(cleanupDirectory(argv[optind], killTime, flags) == 0) {
+	message(LOG_ERROR, "cleanup failed in %s: %s\n", argv[optind],
+		strerror(errno));
+      }
     }
 
     optind++;

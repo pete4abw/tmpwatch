@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.5.1
-Release: 2
+Version: 2.6
+Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
@@ -47,6 +47,10 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Thu Sep  7 2000 Nalin Dahyabhai <nalin@redhat.com>
+- rework to not have to fork() (#17286)
+- error check the utime() call
+
 * Sat Jun 17 2000 Matt Wilson <msw@redhat.com>
 - defattr
 
