@@ -118,7 +118,7 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags)
   DIR * dir;
   struct dirent * ent;
   struct stat sb;
-  time_t *significant_time;
+  time_t *significant_time = NULL;
   int status, pid;
   struct stat here;
   struct utimbuf utb;
