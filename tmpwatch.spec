@@ -48,7 +48,7 @@ rm -rf %{buildroot}
 %config(noreplace) /etc/cron.daily/tmpwatch
 
 %changelog
-* Fri May 30 2002 Mike A. Harris <mharris@redhat.com> 2.9.0-1
+* Fri May 30 2003 Mike A. Harris <mharris@redhat.com> 2.9.0-1
 - Added Solaris/HPUX support to tmpwatch via patch from Paul Gear (#71288)
 - Rebuild in rawhide as 2.9.0-1
 
