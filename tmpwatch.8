@@ -1,0 +1,57 @@
+.TH TMPWATCH 8 "Mon Mar 24 1997"
+.UC 4
+.SH NAME
+tmpwatch \- removes files which haven't been accessed for a period of time
+.SH SYNOPSIS
+\fBtmpwatch\fR [-fav] [--verbose] [--force] [--all] [--test] <hours> <dirs>
+
+.SH DESCRIPTION
+\fBtmpwatch\fR recursively removes files which haven't been accessed
+for a given number of hours. Normally, it's used to clean up directories
+which are used for temporary holding space such as /tmp.
+
+When changing directories, \fBtmpwatch\fR is very sensitive to possible
+race conditions and will exit with an error if one is detected. It does
+not follow symbolic links in the directories it's cleaning (even if a
+symbolic link is given as its argument) and only removes empty directories
+and regular files. 
+
+\fBtmpwatch\fR dates files by their atime, not their mtime. If
+files aren't being removed when \fBls -l\fR implies they should be, use
+\fBstat(1)\fR to examine the files atime to see if that explains the
+problem.
+
+The \fIhours\fR parameter defines the threshold for removing files. If
+the file has not been accessed for \fIhours\fR hours, the file is removed.
+Following this, one or more directories may be given for \fBtmpwatch\fR
+to clean up.
+
+.SH OPTIONS
+.TP
+\fB-a, -\-all\fR
+Remove all file types, not just regular files and directories.
+
+.TP
+\fB-f, -\-force\fR
+Remove files even if root doesn't have write access (akin to \fBrm -f\fR).
+
+.TP
+\fB-\-test\fR
+Doesn't remove files, but goes through the motions of removing them. This
+can be useful with \fB-v\fR.
+
+.TP
+\fB-v\fR
+Print a verbose display. Two levels of verboseness are available -- use
+this option twice to get the most verbose output.
+
+.SH SEE ALSO
+.IR cron (1)
+.IR ls (1)
+.IR rm (1)
+.IR stat (1)
+
+.SH AUTHOR
+.nf
+Erik Troan <ewt@redhat.com>
+.fi
