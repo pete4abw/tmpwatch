@@ -2,7 +2,7 @@ Summary: Cleans up files in directories based on their age
 Name: tmpwatch
 %define version 1.3
 Version: %{version}
-Release: 1
+Release: 2
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: Utilities/System
@@ -42,9 +42,15 @@ make RPM_OPT_FLAGS="$RPM_OPT_FLAGS"
 rm -rf $RPM_BUILD_ROOT
 make PREFIX=$RPM_BUILD_ROOT install
 
+mkdir -p $RPM_BUILD_ROOT/etc/cron.daily
+echo > $RPM_BUILD_ROOT/etc/cron.daily/tmpwatch <<EOF
+/usr/sbin/tmpwatch 240 /tmp /var/tmp /var/catman/cat?
+<<EOF
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 /usr/sbin/tmpwatch
 /usr/man/man8/tmpwatch.8
+%config /etc/cron.daily/tmpwatch
