@@ -1,4 +1,4 @@
-VERSION=$(shell awk '/define version/ { print $$3 }' tmpwatch.spec)
+VERSION=$(shell awk '/Version:/ { print $$2 }' tmpwatch.spec)
 CVSTAG = r$(subst .,-,$(VERSION))
 
 CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\"
