@@ -41,11 +41,15 @@ make PREFIX=$RPM_BUILD_ROOT MANDIR=%{_mandir} install
 rm -rf $RPM_BUILD_ROOT
 
 %files
+%defattr(-,root,root)
 /usr/sbin/tmpwatch
 %{_mandir}/man8/tmpwatch.8*
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Sat Jun 17 2000 Matt Wilson <msw@redhat.com>
+- defattr
+
 * Tue Jun 13 2000 Preston Brown <pbrown@redhat.com>
 - FHS compliance
 
