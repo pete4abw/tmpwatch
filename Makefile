@@ -5,10 +5,12 @@ CFLAGS=$(RPM_OPT_FLAGS) -Wall -DVERSION=\"$(VERSION)\"
 
 ifdef HP_UX
     BASEDIR=/usr/local
+    MANDIR=$(BASEDIR)/man
     INSTALL=./install-sh
     CC=gcc
 else
     BASEDIR=/usr
+    MANDIR=$(BASEDIR)/man
     INSTALL=install
 endif
 
@@ -16,7 +18,7 @@ all: tmpwatch
 
 install: all
 	[ -d $(PREFIX)$(BASEDIR)/sbin ] || mkdir -p $(PREFIX)$(BASEDIR)/sbin
-	[ -d $(PREFIX)$(BASEDIR)/share/man/man8 ] || mkdir -p $(PREFIX)$(BASEDIR)/share/man/man8
+	[ -d $(PREFIX)$(MANDIR)/man/man8 ] || mkdir -p $(PREFIX)$(MANDIR)/man/man8
 	$(INSTALL) -s -m 755 tmpwatch $(PREFIX)$(BASEDIR)/sbin/tmpwatch
 	$(INSTALL) -m 644 tmpwatch.8 $(PREFIX)$(MANDIR)/man8/tmpwatch.8
 
