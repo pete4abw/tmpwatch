@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
 Version: 2.8
-Release: 0.7.x
+Release: 2
 Source: %{name}-%{version}.tar.gz
 License: GPL
 Group: System Environment/Base
@@ -31,8 +31,8 @@ cat > %{buildroot}/etc/cron.daily/tmpwatch <<EOF
 /usr/sbin/tmpwatch 240 /tmp
 /usr/sbin/tmpwatch 720 /var/tmp
 for d in /var/{cache/man,catman}/{cat?,X11R6/cat?,local/cat?}; do
-    if [ -d "$d" ]; then
-	/usr/sbin/tmpwatch -f 720 $d
+    if [ -d "$$d" ]; then
+	/usr/sbin/tmpwatch -f 720 $$d
     fi
 done
 EOF
