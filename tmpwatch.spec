@@ -1,6 +1,6 @@
 Summary: Cleans up files in directories based on their age
 Name: tmpwatch
-%define version 1.4
+%define version 1.5
 Version: %{version}
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
