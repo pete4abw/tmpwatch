@@ -1,6 +1,6 @@
 Summary: Cleans up files in directories based on their age
 Name: tmpwatch
-%define version 1.5
+%define version 1.5.1
 Version: %{version}
 Release: 1
 Source: tmpwatch-%{version}.tar.gz
@@ -14,6 +14,10 @@ recursively searches the directory (ignoring symlinks) and removes files that
 haven't been accessed in a user-specified amount of time.
 
 %changelog
+
+* Wed Jun 10 1998 Erik Troan <ewt@redhat.com>
+
+- make /etc/cron.daily/tmpwatch executable
 
 * Tue Jan 13 1998 Erik Troan <ewt@redhat.com>
 
@@ -51,6 +55,7 @@ make PREFIX=$RPM_BUILD_ROOT install
 mkdir -p $RPM_BUILD_ROOT/etc/cron.daily
 echo '/usr/sbin/tmpwatch 240 /tmp /var/tmp /var/catman/cat?' \
 	> $RPM_BUILD_ROOT/etc/cron.daily/tmpwatch
+chmod +x $RPM_BUILD_ROOT/etc/cron.daily/tmpwatch
 
 %clean
 rm -rf $RPM_BUILD_ROOT
