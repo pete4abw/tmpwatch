@@ -109,7 +109,7 @@ int check_fuser(const char *dirname, const char *filename)
     snprintf(dir, sizeof(dir), "%s/%s", dirname, filename);
     pid = fork();
     if (pid == 0) {
-    	ret = execle("/sbin/fuser", "/sbin/fuser", "-s", dir, NULL);
+    	ret = execle("/sbin/fuser", "/sbin/fuser", "-s", dir, NULL, NULL);
     } else {
 	waitpid(pid, &ret, 0);
     }
