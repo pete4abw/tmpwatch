@@ -145,6 +145,10 @@ int cleanupDirectory(char * dirname, unsigned int killTime, int flags) {
       if ((ent->d_name[0] == '.' && (ent->d_name[1] == '\0' || 
 				     ((ent->d_name[1] == '.') && (ent->d_name[2] == '\0'))))) 
 	continue;
+      
+      /* skip over lost+found */
+      if (strcmp(ent->d_name, "lost+found") == 0)
+	continue;
 
       message(LOG_REALDEBUG, "found directory entry %s\n", ent->d_name);
 
