@@ -16,8 +16,9 @@ clean:
 
 archive:
 	cvs tag -F $(CVSTAG) .
-	@rm -rf /tmp/tmpwatch-$(VERSION)
-	@cd /tmp; cvs export -r$(CVSTAG) -d /tmp/tmpwatch-$(VERSION) tmpwatch
+	@rm -rf /tmp/tmpwatch-$(VERSION) /tmp/tmpwatch
+	@cd /tmp; cvs export -r$(CVSTAG) tmpwatch
+	mv /tmp/tmpwatch /tmp/tmpwatch-$(VERSION)
 	@dir=$$PWD; cd /tmp; tar cvzf $$dir/tmpwatch-$(VERSION).tar.gz tmpwatch-$(VERSION)
 	@rm -rf /tmp/tmpwatch-$(VERSION)
 	@echo "The archive is in tmpwatch-$(VERSION).tar.gz"
