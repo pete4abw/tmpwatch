@@ -1,7 +1,7 @@
 Summary: A utility for removing files based on when they were last accessed.
 Name: tmpwatch
-Version: 2.4
-Release: 2
+Version: 2.5
+Release: 1
 Source: tmpwatch-%{version}.tar.gz
 Copyright: GPL
 Group: System Environment/Base
@@ -46,6 +46,9 @@ rm -rf $RPM_BUILD_ROOT
 %config /etc/cron.daily/tmpwatch
 
 %changelog
+* Thu May 18 2000 Preston Brown <pbrown@redhat.com>
+- don't complain about failure to remove non-empty directories.
+
 * Wed May 17 2000 Preston Brown <pbrown@redhat.com>
 - support /var/cache/man and /var/catman (FHS 2.1 compliance).
 
