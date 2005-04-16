@@ -105,12 +105,15 @@ xmalloc(size_t size)
     return NULL;
 }
 
+/* Returns 0 if OK, 2 on ENOENT, 1 on other errors */
 int safe_chdir(const char *fulldirname, const char *reldirname,
 	       dev_t st_dev, ino_t st_ino)
 {
     struct stat sb1, sb2;
 
     if (lstat(reldirname, &sb1)) {
+	if (errno == ENOENT)
+	    return 2;
 	message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
 		fulldirname, strerror(errno));
 	return 1;
@@ -134,6 +137,8 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
     }
 
     if (chdir(reldirname)) {
+	if (errno == ENOENT)
+	    return 2;
 	message(LOG_ERROR, "chdir to directory %s failed: %s\n",
 		fulldirname, strerror(errno));
 	return 1;
@@ -161,19 +166,19 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
 }
 
 #ifdef _HAVE_FUSER
-int check_fuser(const char *dirname, const char *filename)
+int check_fuser(const char *filename)
 {
     int ret;
     char dir[FILENAME_MAX];
     int pid;
-    extern int errno;
 
     /* should we close all unnecessary file descriptors here? */
     
     snprintf(dir, sizeof(dir), "%s", filename);
     pid = fork();
     if (pid == 0) {
-    	ret = execle(FUSER_PATH, FUSER_PATH, FUSER_ARGS, dir, NULL, NULL);
+    	execle(FUSER_PATH, FUSER_PATH, FUSER_ARGS, dir, NULL, NULL);
+	_exit(127);
     } else {
 	waitpid(pid, &ret, 0);
     }
@@ -191,19 +196,28 @@ time_t *max( time_t *x, time_t *y )
 }
 
 int cleanupDirectory(const char * fulldirname, const char *reldirname,
-		     unsigned int killTime, int flags,
-		     dev_t st_dev, ino_t st_ino)
+		     time_t killTime, int flags, dev_t st_dev, ino_t st_ino)
 {
     DIR *dir;
     struct dirent *ent;
     struct stat sb, here;
     time_t *significant_time;
     struct utimbuf utb;
+    int res;
 
     message(LOG_DEBUG, "cleaning up directory %s\n", fulldirname);
-  
-    if (safe_chdir(fulldirname, reldirname, st_dev, st_ino))
+
+    res = safe_chdir(fulldirname, reldirname, st_dev, st_ino);
+    switch (res) {
+    case 0: /* OK */
+	break;
+	
+    case 1: /* Error */
 	return 0;
+
+    case 2: /* ENOENT, silently do nothing */
+	return 1;
+    }
 
     if (lstat(".", &here)) {
 	message(LOG_ERROR, "error stat()ing current directory %s: %s\n",
@@ -244,8 +258,9 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	if (!ent) break;
 
 	if (lstat(ent->d_name, &sb)) {
-	    message(LOG_ERROR, "failed to lstat %s/%s: %s\n",
-		    fulldirname, ent->d_name, strerror(errno));
+	    if (errno != ENOENT)
+		message(LOG_ERROR, "failed to lstat %s/%s: %s\n",
+			fulldirname, ent->d_name, strerror(errno));
 	    continue;
 	}
 	
@@ -347,7 +362,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 #ifdef _HAVE_FUSER
 	    if ((flags & FLAG_FUSER) &&
 		(access(FUSER_PATH, R_OK | X_OK) == 0) &&
-		check_fuser(fulldirname, ent->d_name)) {
+		check_fuser(ent->d_name)) {
 		message(LOG_VERBOSE, "file is already in use or open: %s\n",
 			ent->d_name);
 		continue;
@@ -363,7 +378,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 
 		if (!(flags & FLAG_TEST)) {
 		    if (rmdir(ent->d_name)) {
-			if (errno != ENOTEMPTY) {
+			if (errno != ENOENT && errno != ENOTEMPTY) {
 			    message(LOG_ERROR, "failed to rmdir %s/%s: %s\n", 
 				    fulldirname, ent->d_name, strerror(errno));
 			}
@@ -410,7 +425,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		S_ISLNK(sb.st_mode)) {
 #ifdef _HAVE_FUSER
 		if (flags & FLAG_FUSER && !access(FUSER_PATH, R_OK|X_OK) &&
-		    check_fuser(fulldirname, ent->d_name)) {
+		    check_fuser(ent->d_name)) {
 		    message(LOG_VERBOSE, "file is already in use or open: %s/%s\n",
 			    fulldirname, ent->d_name);
 		    continue;
@@ -421,7 +436,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 			fulldirname, ent->d_name);
 	    
 		if (!(flags & FLAG_TEST)) {
-		    if (unlink(ent->d_name)) 
+		    if (unlink(ent->d_name) && errno != ENOENT) 
 			message(LOG_ERROR, "failed to unlink %s: %s\n", 
 				fulldirname, ent->d_name);
 		}
@@ -466,8 +481,8 @@ void usage(void) {
 }
 
 int main(int argc, char ** argv) {
-    unsigned int grace;
-    unsigned int killTime;
+    int grace;
+    time_t killTime;
     int flags = 0, arg, orig_dir, long_index;
     struct stat sb;
     
