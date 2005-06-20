@@ -58,6 +58,7 @@
 #define FLAG_FUSER	(1 << 5)
 #define FLAG_CTIME	(1 << 6)
 #define FLAG_NODIRS	(1 << 7)
+#define FLAG_DIRMTIME	(1 << 8)
 
 /* Do not remove lost+found directories if owned by this UID */
 #define LOSTFOUND_UID 0
@@ -292,7 +293,10 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	significant_time = 0;
 	/* Set significant_time to point at the significant field of sb -
 	 * either st_atime or st_mtime depending on the flag selected. - alh */
-	if (flags & FLAG_ATIME)
+	if ((flags & FLAG_DIRMTIME) && S_ISDIR(sb.st_mode))
+	    significant_time = max(significant_time, &sb.st_mtime);
+	/* The else here (and not elsewhere) is intentional */
+	else if (flags & FLAG_ATIME)
 	    significant_time = max(significant_time, &sb.st_atime);
 	if (flags & FLAG_MTIME)
 	    significant_time = max(significant_time, &sb.st_mtime);
@@ -314,7 +318,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		    "was specified\n");
 	}
 
-	message(LOG_REALDEBUG, "taking as significant time: %s\n",
+	message(LOG_REALDEBUG, "taking as significant time: %s",
 		ctime(significant_time));
 
 	if (!sb.st_uid && !(flags & FLAG_FORCE) && !(sb.st_mode & S_IWUSR)) {
@@ -322,7 +326,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		    "skipped: %s\n", ent->d_name);;
 	    continue;
 	} else
-	    /* One more check for different device.  Try hard tno to go
+	    /* One more check for a different device.  Try hard not to go
 	       onto a different device.
 	    */
 	    if (sb.st_dev != st_dev || here.st_dev != st_dev) {
@@ -349,7 +353,12 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		    }
 		    free(dir);
 		}
-		fchdir(dd);
+		if (fchdir(dd) != 0) {
+		    message(LOG_ERROR, "can not return to %s: %s\n",
+			    fulldirname, strerror(errno));
+		    close(dd);
+		    break;
+		}
 		close(dd);
 	    } else {
 		message(LOG_ERROR, "could not perform cleanup in %s/%s: %s\n",
@@ -473,9 +482,9 @@ void usage(void) {
     printCopyright();
     fprintf(stderr, "\n");
 #ifdef _HAVE_GETOPT_LONG
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtvx] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] [--exclude <path>] <hours-untouched> <dirs>\n");
+    fprintf(stderr, "tmpwatch [-u|-m|-c] [-Madfqtvx] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] <hours-untouched> <dirs>\n");
 #else
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-adfqtvx] <hours-untouched> <dirs>\n");
+    fprintf(stderr, "tmpwatch [-u|-m|-c] [-Madfqtvx] <hours-untouched> <dirs>\n");
 #endif
     exit(1);
 }
@@ -494,6 +503,7 @@ int main(int argc, char ** argv) {
 	{ "mtime", 0, 0, 'm' },
 	{ "atime", 0, 0, 'u' },
 	{ "ctime", 0, 0, 'c' },
+	{ "dirmtime", 0, 0, 'M' },
 	{ "quiet", 0, 0, 'q' },
 #ifdef _HAVE_FUSER
 	{ "fuser", 0, 0, 's' },
@@ -505,9 +515,9 @@ int main(int argc, char ** argv) {
     };
 #endif
 #ifdef _HAVE_FUSER
-    const char optstring[] = "adcfmqstuvx:";
+    const char optstring[] = "Macdfmqstuvx:";
 #else
-    const char optstring[] = "adcfmqtuvx:";
+    const char optstring[] = "Macdfmqtuvx:";
 #endif
 
     if (argc == 1) usage();
@@ -523,10 +533,12 @@ int main(int argc, char ** argv) {
 	if (arg == -1) break;
 
 	switch (arg) {
+	case 'M':
+	    flags |= FLAG_DIRMTIME;
+	    break;
 	case 'a':
 	    flags |= FLAG_ALLFILES;
 	    break;
-
 	case 'd':
 	    flags |= FLAG_NODIRS;
 	    break;
@@ -633,7 +645,10 @@ int main(int argc, char ** argv) {
 		message(LOG_ERROR, "cleanup failed in %s: %s\n", argv[optind],
 			strerror(errno));
 	    }
-	    fchdir(orig_dir);
+	    if (fchdir(orig_dir) != 0) {
+		message(LOG_FATAL, "can not return to original working "
+			"directory\n", strerror(errno));
+	    }
 	}
 	optind++;
     }
