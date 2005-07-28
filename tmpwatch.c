@@ -473,8 +473,8 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 void printCopyright(void) {
     fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2005 Red Hat, Inc. "
 	    "All rights reserved.\n");
-    fprintf(stderr, "This may be freely redistributed under the terms of "
-	    "the GNU Public License.\n");
+    fprintf(stderr, "This program may be freely redistributed under the "
+	    "terms of the\nGNU General Public License.\n");
 }
 
 
