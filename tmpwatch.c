@@ -13,19 +13,9 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-
-#ifdef __linux
-
 #include <getopt.h>
-#include <paths.h>
-
-#define _HAVE_GETOPT_LONG
-#define _HAVE_FUSER
-#define FUSER_PATH "/sbin/fuser"
-#define FUSER_ARGS "-s"
-
-#endif
-
+#include <inttypes.h>
+#include <pwd.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,11 +27,19 @@
 #include <sys/wait.h>
 #include <utime.h>
 #include <unistd.h>
+
 #ifdef __sun
 #include <sys/mntent.h>
 #else
 #include <mntent.h>
 #endif
+
+#ifdef __linux
+#include <paths.h>
+#endif
+
+#define FUSER_PATH "/sbin/fuser"
+#define FUSER_ARGS "-s"
 
 #define LOG_REALDEBUG	1
 #define LOG_DEBUG	2
@@ -65,12 +63,21 @@
 
 struct exclusion
 {
-  struct exclusion *next;
-  char *dir, *file;
+    struct exclusion *next;
+    char *dir, *file;
 };
 
 static struct exclusion *exclusions /* = NULL */;
 static struct exclusion **exclusions_tail = &exclusions;
+
+struct excluded_uid
+{
+    struct excluded_uid *next;
+    uid_t uid;
+};
+
+static struct excluded_uid *excluded_uids /* = NULL */;
+static struct excluded_uid **excluded_uids_tail = &excluded_uids;
 
 int logLevel = LOG_NORMAL;
 
@@ -166,7 +173,6 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
     return 0;
 }
 
-#ifdef _HAVE_FUSER
 int check_fuser(const char *filename)
 {
     int ret;
@@ -186,7 +192,6 @@ int check_fuser(const char *filename)
 
     return (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0));
 }
-#endif
 
 time_t *max( time_t *x, time_t *y )
 {
@@ -248,7 +253,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 
     do {
 	struct exclusion *e;
-	
+
 	errno = 0;
 	ent = readdir(dir);
 	if (errno) {
@@ -368,7 +373,6 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    if (*significant_time >= killTime)
 		continue;
 
-#ifdef _HAVE_FUSER
 	    if ((flags & FLAG_FUSER) &&
 		(access(FUSER_PATH, R_OK | X_OK) == 0) &&
 		check_fuser(ent->d_name)) {
@@ -376,7 +380,6 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 			ent->d_name);
 		continue;
 	    }
-#endif
 
 	    /* we should try to remove the directory after cleaning up its
 	       contents, as it should contain no files.  Skip if we have
@@ -430,17 +433,26 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 #endif
 
 	    if ((flags & FLAG_ALLFILES) ||
-		S_ISREG(sb.st_mode) ||
-		S_ISLNK(sb.st_mode)) {
-#ifdef _HAVE_FUSER
+		S_ISREG(sb.st_mode) || S_ISLNK(sb.st_mode)) {
+		const struct excluded_uid *u;
+
 		if (flags & FLAG_FUSER && !access(FUSER_PATH, R_OK|X_OK) &&
 		    check_fuser(ent->d_name)) {
 		    message(LOG_VERBOSE, "file is already in use or open: %s/%s\n",
 			    fulldirname, ent->d_name);
 		    continue;
 		}
-#endif
-	    
+
+                for (u = excluded_uids; u != NULL; u = u->next) {
+                    if (sb.st_uid == u->uid) {
+	                message(LOG_REALDEBUG,
+				"file owner excluded, skipping\n");
+                        break;
+                    }
+                }
+                if (u != NULL)
+                    continue;
+
 		message(LOG_VERBOSE, "removing file %s/%s\n",
 			fulldirname, ent->d_name);
 	    
@@ -481,22 +493,12 @@ void printCopyright(void) {
 void usage(void) {
     printCopyright();
     fprintf(stderr, "\n");
-#ifdef _HAVE_GETOPT_LONG
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-Madfqtvx] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] <hours-untouched> <dirs>\n");
-#else
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-Madfqtvx] <hours-untouched> <dirs>\n");
-#endif
+    fprintf(stderr, "tmpwatch [-u|-m|-c] [-MUadfqtvx] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] [--exclude-user <user>] <hours-untouched> <dirs>\n");
     exit(1);
 }
 
 int main(int argc, char ** argv) {
-    int grace;
-    time_t killTime;
-    int flags = 0, arg, orig_dir, long_index;
-    struct stat sb;
-    
-#ifdef _HAVE_GETOPT_LONG
-    struct option options[] = {
+    static const struct option options[] = {
 	{ "all", 0, 0, 'a' },
 	{ "nodirs", 0, 0, 'd' },
 	{ "force", 0, 0, 'f' },
@@ -505,31 +507,28 @@ int main(int argc, char ** argv) {
 	{ "ctime", 0, 0, 'c' },
 	{ "dirmtime", 0, 0, 'M' },
 	{ "quiet", 0, 0, 'q' },
-#ifdef _HAVE_FUSER
 	{ "fuser", 0, 0, 's' },
-#endif
 	{ "test", 0, 0, 't' },
+	{ "exclude-user", required_argument, 0, 'U' },
 	{ "verbose", 0, 0, 'v' },
 	{ "exclude", required_argument, 0, 'x' },
 	{ 0, 0, 0, 0 }, 
     };
-#endif
-#ifdef _HAVE_FUSER
-    const char optstring[] = "Macdfmqstuvx:";
-#else
-    const char optstring[] = "Macdfmqtuvx:";
-#endif
+    const char optstring[] = "MU:acdfmqstuvx:";
+
+    int grace;
+    time_t killTime;
+    int flags = 0, orig_dir;
+    struct stat sb;
 
     if (argc == 1) usage();
 
     while (1) {
+	int arg, long_index;
+
 	long_index = 0;
 
-#ifdef _HAVE_GETOPT_LONG
 	arg = getopt_long(argc, argv, optstring, options, &long_index);
-#else
-	arg = getopt(argc, argv, optstring);
-#endif
 	if (arg == -1) break;
 
 	switch (arg) {
@@ -545,11 +544,9 @@ int main(int argc, char ** argv) {
 	case 'f':
 	    flags |= FLAG_FORCE;
 	    break;
-#ifdef _HAVE_FUSER
 	case 's':
 	    flags |= FLAG_FUSER;
 	    break;
-#endif
 	case 't':
 	    flags |= FLAG_TEST;
 	    /* fallthrough */
@@ -568,6 +565,30 @@ int main(int argc, char ** argv) {
 	case 'c':
 	    flags |= FLAG_CTIME;
 	    break;
+	case 'U': {
+	    struct excluded_uid *u;
+	    struct passwd *pwd;
+
+	    u = xmalloc(sizeof (*u));
+	    pwd = getpwnam(optarg);
+	    if (pwd != NULL)
+	        u->uid = pwd->pw_uid;
+	    else {
+		intmax_t imax;
+		char *p;
+
+		errno = 0;
+		imax = strtoimax(optarg, &p, 10);
+		if (errno != 0 || *p != 0 || p == optarg
+		    || (uid_t)imax != imax)
+		    message(LOG_FATAL, "unknown user %s\n", optarg);
+		u->uid = imax;
+	    }
+	    u->next = NULL;
+	    *excluded_uids_tail = u;
+	    excluded_uids_tail = &u->next;
+	    break;
+	}
 	case 'x': {
 	    struct exclusion *e;
 	    char *p;

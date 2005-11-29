@@ -3,9 +3,10 @@
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
-\fBtmpwatch\fR [-u|-m|-c] [-Madfqstvx] [--verbose] [--force] [--all] [--nodirs]
-               [--test] [--fuser] [--quiet] [--atime|--mtime|--ctime]
-               [--dirmtime] [--exclude <path>] <hours> <dirs>
+\fBtmpwatch\fR [-u|-m|-c] [-MUadfqstvx] [--verbose] [--force] [--all]
+               [--nodirs] [--test] [--fuser] [--quiet]
+               [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>]
+               [--exclude-user <user>] <hours> <dirs>
 
 .SH DESCRIPTION
 \fBtmpwatch\fR recursively removes files which haven't been accessed
@@ -56,7 +57,7 @@ Make the decision about deleting a file based on the file's ctime
 decision based on the mtime.
 
 .TP
-\fB-c, -\-dirmtime\fR
+\fB-M, -\-dirmtime\fR
 Make the decision about deleting a directory based on the directory's mtime
 (modification time) instead of the atime; completely ignore atime for
 directories.
@@ -90,6 +91,10 @@ Don't remove files, but go through the motions of removing them. This
 implies \fB\-v\fR.
 
 .TP
+\fB-U, -\-exclude-user=\fIuser\fR
+Don't remove files owned by \fIuser\fR, which can be an user name or numeric
+user ID.
+
 .TP
 \fB-v, -\-verbose\fR
 Print a verbose display. Two levels of verboseness are available -- use
