@@ -1,6 +1,6 @@
 /*
  * tmpwatch.c -- remove files in a directory, but do it carefully.
- * Copyright (c) 1997-2001, 2004, 2005 Red Hat, Inc. All rights reserved.
+ * Copyright (c) 1997-2001, 2004, 2005, 2006 Red Hat, Inc. All rights reserved.
  * Licensed under terms of the GPL.
  *
  * Authors: Erik Troan <ewt@redhat.com>
@@ -56,7 +56,8 @@
 #define FLAG_FUSER	(1 << 5)
 #define FLAG_CTIME	(1 << 6)
 #define FLAG_NODIRS	(1 << 7)
-#define FLAG_DIRMTIME	(1 << 8)
+#define FLAG_NOSYMLINKS (1 << 8)
+#define FLAG_DIRMTIME	(1 << 9)
 
 /* Do not remove lost+found directories if owned by this UID */
 #define LOSTFOUND_UID 0
@@ -432,8 +433,9 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    }
 #endif
 
-	    if ((flags & FLAG_ALLFILES) ||
-		S_ISREG(sb.st_mode) || S_ISLNK(sb.st_mode)) {
+	    if ((flags & FLAG_ALLFILES)
+		|| S_ISREG(sb.st_mode)
+		|| (!(flags & FLAG_NOSYMLINKS) && S_ISLNK(sb.st_mode))) {
 		const struct excluded_uid *u;
 
 		if (flags & FLAG_FUSER && !access(FUSER_PATH, R_OK|X_OK) &&
@@ -482,25 +484,29 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
     return 1;
 }
 
-void printCopyright(void) {
-    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2005 Red Hat, Inc. "
+void printCopyright(void)
+{
+    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2006 Red Hat, Inc. "
 	    "All rights reserved.\n");
     fprintf(stderr, "This program may be freely redistributed under the "
 	    "terms of the\nGNU General Public License.\n");
 }
 
 
-void usage(void) {
+void usage(void)
+{
     printCopyright();
     fprintf(stderr, "\n");
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-MUadfqtvx] [--verbose] [--force] [--all] [--nodirs] [--test] [--quiet] [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] [--exclude-user <user>] <hours-untouched> <dirs>\n");
+    fprintf(stderr, "tmpwatch [-u|-m|-c] [-MUadfqtvx] [--verbose] [--force] [--all] [--nodirs] [--nosymlinks] [--test] [--quiet] [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] [--exclude-user <user>] <hours-untouched> <dirs>\n");
     exit(1);
 }
 
-int main(int argc, char ** argv) {
+int main(int argc, char ** argv)
+{
     static const struct option options[] = {
 	{ "all", 0, 0, 'a' },
 	{ "nodirs", 0, 0, 'd' },
+	{ "nosymlinks", 0, 0, 'l' },
 	{ "force", 0, 0, 'f' },
 	{ "mtime", 0, 0, 'm' },
 	{ "atime", 0, 0, 'u' },
@@ -512,9 +518,9 @@ int main(int argc, char ** argv) {
 	{ "exclude-user", required_argument, 0, 'U' },
 	{ "verbose", 0, 0, 'v' },
 	{ "exclude", required_argument, 0, 'x' },
-	{ 0, 0, 0, 0 }, 
+	{ 0, 0, 0, 0 },
     };
-    const char optstring[] = "MU:acdfmqstuvx:";
+    const char optstring[] = "MU:acdflmqstuvx:";
 
     int grace;
     time_t killTime;
@@ -543,6 +549,9 @@ int main(int argc, char ** argv) {
 	    break;
 	case 'f':
 	    flags |= FLAG_FORCE;
+	    break;
+	case 'l':
+	    flags |= FLAG_NOSYMLINKS;
 	    break;
 	case 's':
 	    flags |= FLAG_FUSER;

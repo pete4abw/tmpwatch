@@ -1,10 +1,10 @@
-.TH TMPWATCH 8 "Mon Jun 20 2005" "Red Hat Linux" "System Administrator's Manual"
+.TH TMPWATCH 8 "Sat May 6 2006" "Red Hat Linux" "System Administrator's Manual"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
 \fBtmpwatch\fR [-u|-m|-c] [-MUadfqstvx] [--verbose] [--force] [--all]
-               [--nodirs] [--test] [--fuser] [--quiet]
+               [--nodirs] [--nosymlinks] [--test] [--fuser] [--quiet]
                [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>]
                [--exclude-user <user>] <hours> <dirs>
 
@@ -18,7 +18,7 @@ race conditions and will exit with an error if one is detected. It does
 not follow symbolic links in the directories it's cleaning (even if a
 symbolic link is given as its argument), will not switch filesystems,
 skips \fIlost+found\fR directories owned by the root user,
-and only removes empty directories and regular files. 
+and only removes empty directories regular files, and symbolic links.
 
 By default, \fBtmpwatch\fR dates files by their atime (access time), not
 their mtime (modification time). If files aren't being removed when
@@ -64,11 +64,15 @@ directories.
 
 .TP
 \fB-a, -\-all\fR
-Remove all file types, not just regular files and directories.
+Remove all file types, not just regular files, symbolic links and directories.
 
 .TP
 \fB-d, -\-nodirs\fR
 Do not attempt to remove directories, even if they are empty.
+
+.TP
+\fB-d, -\-nosymlinks\fR
+Do not attempt to remove symbolic links.
 
 .TP
 \fB-f, -\-force\fR
