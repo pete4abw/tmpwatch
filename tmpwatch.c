@@ -38,6 +38,12 @@
 #include <paths.h>
 #endif
 
+#ifdef __GNUC__
+#define attribute__(X) __attribute__ (X)
+#else
+#define attribute__(X)
+#endif
+
 #define FUSER_PATH "/sbin/fuser"
 #define FUSER_ARGS "-s"
 
@@ -82,7 +88,8 @@ static struct excluded_uid **excluded_uids_tail = &excluded_uids;
 
 int logLevel = LOG_NORMAL;
 
-void message(int level, char * format, ...)
+void attribute__((format(printf, 2, 3)))
+  message(int level, char * format, ...)
 {
     va_list args;
     FILE * where = stdout;
@@ -234,14 +241,16 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 
     /* Don't cross filesystems */
     if (here.st_dev != st_dev) {
-	message(LOG_ERROR, "directory %s device changed right under us!!!\n");
+	message(LOG_ERROR, "directory %s device changed right under us!!!\n",
+		fulldirname);
 	message(LOG_FATAL, "this indicates a possible intrustion attempt\n");
 	return 1;
     }
 
     /* Check '.' and expected inode */
     if (here.st_ino != st_ino) {
-	message(LOG_ERROR, "directory %s inode changed right under us!!!\n");
+	message(LOG_ERROR, "directory %s inode changed right under us!!!\n",
+		fulldirname);
 	message(LOG_FATAL, "this indicates a possible intrusion attempt\n");
 	return 1;
     }
@@ -677,7 +686,7 @@ int main(int argc, char ** argv)
 	    }
 	    if (fchdir(orig_dir) != 0) {
 		message(LOG_FATAL, "can not return to original working "
-			"directory\n", strerror(errno));
+			"directory: %s\n", strerror(errno));
 	    }
 	}
 	optind++;
