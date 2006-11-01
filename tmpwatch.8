@@ -5,12 +5,13 @@ tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
 \fBtmpwatch\fR [-u|-m|-c] [-MUadfqstvx] [--verbose] [--force] [--all]
                [--nodirs] [--nosymlinks] [--test] [--fuser] [--quiet]
-               [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>]
-               [--exclude-user <user>] <hours> <dirs>
+               [--atime|--mtime|--ctime] [--dirmtime] [--exclude \fIpath\fR]
+               [--exclude-user \fIuser\fR] \fItime\fR \fIdirs\fR
 
 .SH DESCRIPTION
 \fBtmpwatch\fR recursively removes files which haven't been accessed
-for a given number of hours. Normally, it's used to clean up directories
+for a given time.
+Normally, it's used to clean up directories
 which are used for temporary holding space such as /tmp.
 
 When changing directories, \fBtmpwatch\fR is very sensitive to possible
@@ -30,8 +31,20 @@ the decision about deleting a file will be based on the maximum of
 these times.  The -\-dirmtime option implies ignoring atime of directories,
 even if the -\-atime option is used.
 
-The \fIhours\fR parameter defines the threshold for removing files. If
-the file has not been accessed for \fIhours\fR hours, the file is removed.
+The \fItime\fR parameter defines the threshold for removing files.
+If the file has not been accessed for \fItime\fR, the file is removed.
+The
+.I time
+argument is a number with an optional single-character suffix
+specifying the units:
+.B h
+for hours,
+.B d
+for days.
+If no suffix is specified,
+.I time
+is in hours.
+
 Following this, one or more directories may be given for \fBtmpwatch\fR
 to clean up.
 

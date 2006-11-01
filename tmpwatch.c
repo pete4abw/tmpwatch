@@ -532,6 +532,7 @@ int main(int argc, char ** argv)
     const char optstring[] = "MU:acdflmqstuvx:";
 
     int grace;
+    char units, garbage;
     time_t killTime;
     int flags = 0, orig_dir;
     struct stat sb;
@@ -643,9 +644,26 @@ int main(int argc, char ** argv)
 	message(LOG_FATAL, "time (in hours) must be given\n");
     }
 
-    if ((sscanf(argv[optind], "%d", &grace) != 1) || (grace < 0)) {
-	message(LOG_FATAL, "bad time argument %s\n", argv[optind]);
+    switch (sscanf(argv[optind], "%d%c%c", &grace, &units, &garbage)) {
+    case 1:
+	break; /* hours by default */
+    case 2:
+	switch (units) {
+	case 'd':
+	    grace *= 24; /* days to hours */
+	    break;
+	case 'h':
+	    break; /* hours */
+	default:
+	    grace = -1;  /* invalid */
+	}
+	break;
+    default:
+	grace = -1; /* invalid */
     }
+
+    if (grace < 0)
+	message(LOG_FATAL, "bad time argument %s\n", argv[optind]);
 
     optind++;
     if (optind == argc) {
@@ -654,7 +672,7 @@ int main(int argc, char ** argv)
 
     grace = grace * 3600;			/* to seconds from hours */
 
-    message(LOG_DEBUG, "grace period is %u\n", grace);
+    message(LOG_DEBUG, "grace period is %d seconds\n", grace);
 
     killTime = time(NULL) - grace;
 
