@@ -10,11 +10,13 @@
  *
  */
 
+#include <assert.h>
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <pwd.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -121,6 +123,19 @@ xmalloc(size_t size)
     return NULL;
 }
 
+static char *
+absolute_path(const char *path)
+{
+    char buf[PATH_MAX + 1], *res;
+
+    if (realpath(path, buf) == NULL)
+	message(LOG_FATAL, "cannot resolve %s: %s\n", path, strerror(errno));
+    res = strdup(buf);
+    if (res == NULL)
+	message(LOG_FATAL, "can not allocate memory\n");
+    return res;
+}
+
 /* Returns 0 if OK, 2 on ENOENT, 1 on other errors */
 int safe_chdir(const char *fulldirname, const char *reldirname,
 	       dev_t st_dev, ino_t st_ino)
@@ -207,6 +222,30 @@ time_t *max( time_t *x, time_t *y )
     if ( y==0 ) return x;
 
     return (*x>=*y) ? x : y;
+}
+
+static int
+is_mount_point(const char *path)
+{
+    FILE *fp;
+    struct mntent *mnt;
+    int ret;
+
+    if ((fp = setmntent(_PATH_MOUNTED, "r")) == NULL) {
+	message(LOG_ERROR, "failed to open %s for reading\n", _PATH_MOUNTED);
+	return -1;
+    }
+
+    ret = 0;
+    while ((mnt = getmntent(fp)) != NULL) {
+	if (strcmp(mnt->mnt_dir, path) == 0) {
+	    ret = 1;
+	    break;
+	}
+    }
+    endmntent(fp);
+
+    return ret;
 }
 
 int cleanupDirectory(const char * fulldirname, const char *reldirname,
@@ -413,29 +452,27 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 
 #ifdef __linux
 	    /* check if it is an ext3 journal file */
-	    if ((strcmp(ent->d_name, ".journal") == 0) &&
-		(sb.st_uid == 0)) {
-		FILE *fp;
-		struct mntent *mnt;
-		int foundflag = 0;
-		
-		if ((fp = setmntent(_PATH_MOUNTED, "r")) == NULL) {
-		    message(LOG_ERROR, "failed to open %s for reading\n",
-			    _PATH_MOUNTED);
+	    if (strcmp(ent->d_name, ".journal") == 0 && sb.st_uid == 0) {
+		int mount;
+
+		mount = is_mount_point(fulldirname);
+		if (mount == -1)
+		    continue;
+		if (mount != 0) {
+		    message(LOG_VERBOSE, "skipping ext3 journal file: %s/%s\n",
+			    fulldirname, ent->d_name);
 		    continue;
 		}
-		
-		while ((mnt = getmntent(fp)) != NULL) {
-		    /* is it in the root of the filesystem? */
-		    if (strcmp(mnt->mnt_dir, fulldirname) == 0) {
-			foundflag = 1;
-			break;
-		    }
-		}
-		endmntent(fp);
+	    }
+	    if (strcmp(ent->d_name, "aquota.user") == 0 ||
+		strcmp(ent->d_name, "aquota.group") == 0) {
+		int mount;
 
-		if (foundflag) {
-		    message(LOG_VERBOSE, "skipping ext3 journal file: %s/%s\n",
+		mount = is_mount_point(fulldirname);
+		if (mount == -1)
+		    continue;
+		if (mount != 0) {
+		    message(LOG_VERBOSE, "skipping quota file: %s/%s\n",
 			    fulldirname, ent->d_name);
 		    continue;
 		}
@@ -610,20 +647,18 @@ int main(int argc, char ** argv)
 	}
 	case 'x': {
 	    struct exclusion *e;
-	    char *p;
+	    char *path, *p;
 
 	    e = xmalloc(sizeof (*e));
-	    p = strrchr(optarg, '/');
-	    if (*optarg != '/' || p == NULL) {
-		message(LOG_ERROR, "%s is not an absolute path\n", optarg);
-		usage();
-	    }
+	    path = absolute_path(optarg);
+	    p = strrchr(path, '/');
+	    assert (p != NULL);
 	    e->file = p + 1;
-	    if (p == optarg)
+	    if (p == path)
 		e->dir = "/";
 	    else {
 		*p = 0;
-		e->dir = optarg;
+		e->dir = path;
 	    }
 	    e->next = NULL;
 	    *exclusions_tail = e;
@@ -683,23 +718,22 @@ int main(int argc, char ** argv)
     if (orig_dir == -1)
 	message(LOG_FATAL, "cannot open current directory\n");
     while (optind < argc) {
-	if (exclusions != NULL && *argv[optind] != '/')
-	    message(LOG_ERROR, "--exclude is ignored for %s, which is not an "
-		    "absolute path\n", argv[optind]);
-	if (lstat(argv[optind], &sb)) {
-	    message(LOG_ERROR, "lstat() of directory %s failed: %s\n",
-		    argv[optind], strerror(errno));
+	char *path;
+
+	path = absolute_path(argv[optind]);
+	if (lstat(path, &sb)) {
+	    message(LOG_ERROR, "lstat() of directory %s failed: %s\n", path,
+		    strerror(errno));
 	    exit(1);
 	}
 
 	if (S_ISLNK(sb.st_mode)) {
 	    message(LOG_DEBUG, "initial directory %s is a symlink -- "
-		    "skipping\n", argv[optind]);
+		    "skipping\n", path);
 	} else {
-	    if(cleanupDirectory(argv[optind], argv[optind],
-				killTime, flags,
-				sb.st_dev, sb.st_ino) == 0) {
-		message(LOG_ERROR, "cleanup failed in %s: %s\n", argv[optind],
+	    if (cleanupDirectory(path, path, killTime, flags, sb.st_dev,
+				 sb.st_ino) == 0) {
+		message(LOG_ERROR, "cleanup failed in %s: %s\n", path,
 			strerror(errno));
 	    }
 	    if (fchdir(orig_dir) != 0) {
