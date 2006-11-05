@@ -1,4 +1,4 @@
-VERSION=2.9.9
+VERSION=2.9.10
 CVSTAG = tmpwatch-$(subst .,_,$(VERSION))
 CVSROOT = $(shell cat CVS/Root)
 OS_NAME=$(shell uname -s)

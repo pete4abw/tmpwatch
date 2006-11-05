@@ -124,13 +124,20 @@ xmalloc(size_t size)
 }
 
 static char *
-absolute_path(const char *path)
+absolute_path(const char *path, int allow_nonexistent)
 {
     char buf[PATH_MAX + 1], *res;
+    const char *src;
 
-    if (realpath(path, buf) == NULL)
-	message(LOG_FATAL, "cannot resolve %s: %s\n", path, strerror(errno));
-    res = strdup(buf);
+    src = realpath(path, buf);
+    if (src == NULL) {
+	if (allow_nonexistent != 0)
+	    src = path;
+	else
+	    message(LOG_FATAL, "cannot resolve %s: %s\n", path,
+		    strerror(errno));
+    }
+    res = strdup(src);
     if (res == NULL)
 	message(LOG_FATAL, "can not allocate memory\n");
     return res;
@@ -650,7 +657,11 @@ int main(int argc, char ** argv)
 	    char *path, *p;
 
 	    e = xmalloc(sizeof (*e));
-	    path = absolute_path(optarg);
+	    path = absolute_path(optarg, 1);
+	    if (*path != '/') {
+		message(LOG_ERROR, "%s is not an absolute path\n", path);
+		usage();
+	    }
 	    p = strrchr(path, '/');
 	    assert (p != NULL);
 	    e->file = p + 1;
@@ -720,7 +731,7 @@ int main(int argc, char ** argv)
     while (optind < argc) {
 	char *path;
 
-	path = absolute_path(argv[optind]);
+	path = absolute_path(argv[optind], 0);
 	if (lstat(path, &sb)) {
 	    message(LOG_ERROR, "lstat() of directory %s failed: %s\n", path,
 		    strerror(errno));
