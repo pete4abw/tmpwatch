@@ -50,6 +50,6 @@ archive:
 	@rm -rf /tmp/tmpwatch-$(VERSION) /tmp/tmpwatch
 	@cd /tmp; cvs -d $(CVSROOT) export -r$(CVSTAG) tmpwatch
 	mv /tmp/tmpwatch /tmp/tmpwatch-$(VERSION)
-	@dir=$$PWD; cd /tmp; tar cvzf $$dir/tmpwatch-$(VERSION).tar.gz tmpwatch-$(VERSION)
+	@dir=$$PWD; cd /tmp; tar cvjf $$dir/tmpwatch-$(VERSION).tar.bz2 tmpwatch-$(VERSION)
 	@rm -rf /tmp/tmpwatch-$(VERSION)
-	@echo "The archive is in tmpwatch-$(VERSION).tar.gz"
+	@echo "The archive is in tmpwatch-$(VERSION).tar.bz2"
