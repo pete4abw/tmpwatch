@@ -366,7 +366,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	       mtime, because when a file in a directory is deleted, its
 	       ctime will change, and there's no way we can change it
 	       back.  Therefore, we use mtime rather than ctime so that
-	       directories won't hang around for along time after their
+	       directories won't hang around for a long time after their
 	       contents are removed. */
 	    if (S_ISDIR(sb.st_mode))
 		significant_time = max(significant_time, &sb.st_mtime);
