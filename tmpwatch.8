@@ -1,4 +1,4 @@
-.TH TMPWATCH 8 "Sat May 6 2006" "Red Hat Linux" "System Administrator's Manual"
+.TH TMPWATCH 8 "Fri Dec 14 2007" "Red Hat Linux" "System Administrator's Manual"
 .UC 4
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
@@ -19,7 +19,7 @@ race conditions and will exit with an error if one is detected. It does
 not follow symbolic links in the directories it's cleaning (even if a
 symbolic link is given as its argument), will not switch filesystems,
 skips \fIlost+found\fR directories owned by the root user,
-and only removes empty directories regular files, and symbolic links.
+and only removes empty directories, regular files, and symbolic links.
 
 By default, \fBtmpwatch\fR dates files by their atime (access time), not
 their mtime (modification time). If files aren't being removed when
@@ -84,12 +84,12 @@ Remove all file types, not just regular files, symbolic links and directories.
 Do not attempt to remove directories, even if they are empty.
 
 .TP
-\fB-d, -\-nosymlinks\fR
-Do not attempt to remove symbolic links.
-
-.TP
 \fB-f, -\-force\fR
 Remove files even if root doesn't have write access (akin to \fBrm -f\fR).
+
+.TP
+\fB-l, -\-nosymlinks\fR
+Do not attempt to remove symbolic links.
 
 .TP
 \fB-q, -\-quiet\fR
