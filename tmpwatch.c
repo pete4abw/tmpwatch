@@ -1,13 +1,25 @@
 /*
  * tmpwatch.c -- remove files in a directory, but do it carefully.
- * Copyright (c) 1997-2001, 2004, 2005, 2006 Red Hat, Inc. All rights reserved.
- * Licensed under terms of the GPL.
  *
- * Authors: Erik Troan <ewt@redhat.com>
- *          Preston Brown <pbrown@redhat.com>
- *          Mike A. Harris <mharris@redhat.com>
- *          Miloslav Trmac <mitr@redhat.com>
+ * Copyright (C) 1997-2001, 2004-2008 Red Hat, Inc.  All rights reserved.
  *
+ * This copyrighted material is made available to anyone wishing to use,
+ * modify, copy, or redistribute it subject to the terms and conditions of the
+ * GNU General Public License v.2.  This program is distributed in the hope
+ * that it will be useful, but WITHOUT ANY WARRANTY expressed or implied,
+ * including the implied warranties of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  Any Red Hat
+ * trademarks that are incorporated in the source code or documentation are not
+ * subject to the GNU General Public License and may only be used or replicated
+ * with the express permission of Red Hat, Inc.
+ *
+ * Red Hat Author(s): Erik Troan <ewt@redhat.com>
+ *                    Preston Brown <pbrown@redhat.com>
+ *                    Mike A. Harris <mharris@redhat.com>
+ *                    Miloslav Trmac <mitr@redhat.com>
  */
 
 #include <assert.h>
@@ -537,12 +549,12 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
     return 1;
 }
 
-void printCopyright(void)
+static void printCopyright(void)
 {
-    fprintf(stderr, "tmpwatch " VERSION " - (c) 1997-2006 Red Hat, Inc. "
-	    "All rights reserved.\n");
-    fprintf(stderr, "This program may be freely redistributed under the "
-	    "terms of the\nGNU General Public License.\n");
+    fprintf(stderr, "tmpwatch " VERSION " - (C) 1997-2008 Red Hat, Inc. "
+	    "All rights reserved.\n"
+	    "This program may be freely redistributed under the terms of the\n"
+	    "GNU General Public License version 2.\n");
 }
 
 
