@@ -1,6 +1,5 @@
-VERSION=2.9.12
-CVSTAG = tmpwatch-$(subst .,_,$(VERSION))
-CVSROOT = $(shell cat CVS/Root)
+VERSION=2.9.13
+HGTAG = 'tmpwatch-$(VERSION)'
 OS_NAME=$(shell uname -s)
 
 CFLAGS=$(RPM_OPT_FLAGS) -W -Wall -DVERSION=\"$(VERSION)\" -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
@@ -41,15 +40,15 @@ clean:
 	rm -f tmpwatch
 
 force-tag:
-	cvs tag -F $(CVSTAG) .
+	hg tag -f $(HGTAG)
 
 tag:
-	cvs tag -c $(CVSTAG) .
+	hg tag $(HGTAG)
 
 archive:
-	@rm -rf /tmp/tmpwatch-$(VERSION) /tmp/tmpwatch
-	@cd /tmp; cvs -d $(CVSROOT) export -r$(CVSTAG) tmpwatch
-	mv /tmp/tmpwatch /tmp/tmpwatch-$(VERSION)
-	@dir=$$PWD; cd /tmp; tar cvjf $$dir/tmpwatch-$(VERSION).tar.bz2 tmpwatch-$(VERSION)
-	@rm -rf /tmp/tmpwatch-$(VERSION)
-	@echo "The archive is in tmpwatch-$(VERSION).tar.bz2"
+	rm -rf /tmp/tmpwatch-$(VERSION) /tmp/tmpwatch
+	hg clone -r $(HGTAG) . /tmp/tmpwatch-$(VERSION)
+	rm -rf /tmp/tmpwatch-$(VERSION)/.hg*
+	dir=$$PWD; cd /tmp; tar cvjf $$dir/tmpwatch-$(VERSION).tar.bz2 tmpwatch-$(VERSION)
+	rm -rf /tmp/tmpwatch-$(VERSION)
+	echo "The archive is in tmpwatch-$(VERSION).tar.bz2"

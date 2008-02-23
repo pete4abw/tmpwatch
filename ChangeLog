@@ -1,0 +1,14 @@
+2008-02-23  Miloslav Trmač  <mitr@redhat.com>
+
+	* Makefile (VERSION): Version 2.9.13.
+
+	* NEWS
+	* README: New file.
+
+	* Makefile (HGTAG): Replace CVSTAG.
+	(force-tag, tag, archive): Update for Mercurial.
+
+	* tmpwatch.c: Relicense to GPLv2.  Update Red Hat copyright message.
+	(printCopyright): Update.
+
+	* tmpwatch.8: Add a copyright message.
