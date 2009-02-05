@@ -453,7 +453,7 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
 	       contents, as it should contain no files.  Skip if we have
 	       specified the "no directories" flag. */
 	    if (!(flags & FLAG_NODIRS)) {
-		message(LOG_VERBOSE, "removing directory %s/%s if not empty\n",
+		message(LOG_VERBOSE, "removing directory %s/%s if empty\n",
 			fulldirname, ent->d_name);
 
 		if (!(flags & FLAG_TEST)) {
