@@ -1,3 +1,7 @@
+2009-02-05  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c (cleanupDirectory): Fix an incorrect message (#3).
+
 2008-11-11  Miloslav Trmač  <mitr@redhat.com>
 
 	* COPYING: New file.
