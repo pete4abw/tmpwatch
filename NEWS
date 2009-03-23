@@ -1,3 +1,8 @@
+2.9.14
+* Fix an incorrect message in verbose mode (#3).
+* Ship the GPLv2 text (#2).
+* Fix build on Mac OS X and perhaps Solaris as well (#1, #4).
+
 2.9.13
 * New home page at https://fedorahosted.org/tmpwatch/ .
 * tmpwatch is now licensed under GPLv2.

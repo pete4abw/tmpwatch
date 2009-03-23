@@ -1,5 +1,8 @@
 2009-03-23  Miloslav Trmač  <mitr@redhat.com>
 
+	* Makefile (VERSION): Version 2.9.14.
+	* NEWS: Update.
+
 	* tmpwatch.c: Only #include mntent.h on Linux.
 	(is_mount_point): Only define on Linux, it is only used on Linux.
 
