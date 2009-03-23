@@ -1,3 +1,8 @@
+2009-03-23  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c: Only #include mntent.h on Linux.
+	(is_mount_point): Only define on Linux, it is only used on Linux.
+
 2009-02-05  Miloslav Trmač  <mitr@redhat.com>
 
 	* tmpwatch.c (cleanupDirectory): Fix an incorrect message (#3).
