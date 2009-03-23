@@ -42,13 +42,8 @@
 #include <utime.h>
 #include <unistd.h>
 
-#ifdef __sun
-#include <sys/mntent.h>
-#else
-#include <mntent.h>
-#endif
-
 #ifdef __linux
+#include <mntent.h>
 #include <paths.h>
 #endif
 
@@ -243,6 +238,7 @@ time_t *max( time_t *x, time_t *y )
     return (*x>=*y) ? x : y;
 }
 
+#ifdef __linux
 static int
 is_mount_point(const char *path)
 {
@@ -266,6 +262,7 @@ is_mount_point(const char *path)
 
     return ret;
 }
+#endif
 
 int cleanupDirectory(const char * fulldirname, const char *reldirname,
 		     time_t killTime, int flags, dev_t st_dev, ino_t st_ino)
