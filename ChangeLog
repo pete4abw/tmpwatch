@@ -1,3 +1,8 @@
+2009-03-25  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c (check_fuser): Don't pass NULL as environment pointer,
+	it is undefined by POSIX.
+
 2009-03-23  Miloslav Trmač  <mitr@redhat.com>
 
 	* Makefile (VERSION): Version 2.9.14.

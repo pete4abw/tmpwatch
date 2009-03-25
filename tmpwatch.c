@@ -1,7 +1,7 @@
 /*
  * tmpwatch.c -- remove files in a directory, but do it carefully.
  *
- * Copyright (C) 1997-2001, 2004-2008 Red Hat, Inc.  All rights reserved.
+ * Copyright (C) 1997-2001, 2004-2009 Red Hat, Inc.  All rights reserved.
  *
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions of the
@@ -212,6 +212,8 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
 
 int check_fuser(const char *filename)
 {
+    static char *const empty_environ[] = { NULL };
+
     int ret;
     char dir[FILENAME_MAX];
     int pid;
@@ -221,7 +223,7 @@ int check_fuser(const char *filename)
     snprintf(dir, sizeof(dir), "%s", filename);
     pid = fork();
     if (pid == 0) {
-    	execle(FUSER_PATH, FUSER_PATH, FUSER_ARGS, dir, NULL, NULL);
+	execle(FUSER_PATH, FUSER_PATH, FUSER_ARGS, dir, NULL, empty_environ);
 	_exit(127);
     } else {
 	waitpid(pid, &ret, 0);
