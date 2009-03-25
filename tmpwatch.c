@@ -95,9 +95,9 @@ struct excluded_uid
 static struct excluded_uid *excluded_uids /* = NULL */;
 static struct excluded_uid **excluded_uids_tail = &excluded_uids;
 
-int logLevel = LOG_NORMAL;
+static int logLevel = LOG_NORMAL;
 
-void attribute__((format(printf, 2, 3)))
+static void attribute__((format(printf, 2, 3)))
   message(int level, char * format, ...)
 {
     va_list args;
@@ -151,8 +151,9 @@ absolute_path(const char *path, int allow_nonexistent)
 }
 
 /* Returns 0 if OK, 2 on ENOENT, 1 on other errors */
-int safe_chdir(const char *fulldirname, const char *reldirname,
-	       dev_t st_dev, ino_t st_ino)
+static int
+safe_chdir(const char *fulldirname, const char *reldirname, dev_t st_dev,
+	   ino_t st_ino)
 {
     struct stat sb1, sb2;
 
@@ -210,7 +211,8 @@ int safe_chdir(const char *fulldirname, const char *reldirname,
     return 0;
 }
 
-int check_fuser(const char *filename)
+static int
+check_fuser(const char *filename)
 {
     static char *const empty_environ[] = { NULL };
 
@@ -232,7 +234,8 @@ int check_fuser(const char *filename)
     return (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0));
 }
 
-time_t *max( time_t *x, time_t *y )
+static time_t *
+max(time_t *x, time_t *y)
 {
     if ( x==0 ) return y;
     if ( y==0 ) return x;
@@ -266,8 +269,9 @@ is_mount_point(const char *path)
 }
 #endif
 
-int cleanupDirectory(const char * fulldirname, const char *reldirname,
-		     time_t killTime, int flags, dev_t st_dev, ino_t st_ino)
+static int
+cleanupDirectory(const char * fulldirname, const char *reldirname,
+		 time_t killTime, int flags, dev_t st_dev, ino_t st_ino)
 {
     DIR *dir;
     struct dirent *ent;
@@ -548,16 +552,18 @@ int cleanupDirectory(const char * fulldirname, const char *reldirname,
     return 1;
 }
 
-static void printCopyright(void)
+static void
+printCopyright(void)
 {
-    fprintf(stderr, "tmpwatch " VERSION " - (C) 1997-2008 Red Hat, Inc. "
+    fprintf(stderr, "tmpwatch " VERSION " - (C) 1997-2009 Red Hat, Inc. "
 	    "All rights reserved.\n"
 	    "This program may be freely redistributed under the terms of the\n"
 	    "GNU General Public License version 2.\n");
 }
 
 
-void usage(void)
+static void
+usage(void)
 {
     printCopyright();
     fprintf(stderr, "\n");

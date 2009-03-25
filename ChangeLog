@@ -1,5 +1,10 @@
 2009-03-25  Miloslav Trmač  <mitr@redhat.com>
 
+	* tmpwatch.c (logLevel, message, safe_chdir, check_fuser, max)
+	(cleanupDirectory, printCopyright, usage): Make static.
+
+	* tmpwatch.c (printCopyright): Update copyright year.
+
 	* tmpwatch.c (check_fuser): Don't pass NULL as environment pointer,
 	it is undefined by POSIX.
 
