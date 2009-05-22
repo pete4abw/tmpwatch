@@ -1,3 +1,6 @@
+2.9.15
+* A small portability improvement.
+
 2.9.14
 * Fix an incorrect message in verbose mode (#3).
 * Ship the GPLv2 text (#2).

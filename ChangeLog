@@ -1,3 +1,8 @@
+2009-05-22  Miloslav Trmač  <mitr@redhat.com>
+
+	* Makefile (VERSION): Version 2.9.15.
+	* NEWS: Update.
+
 2009-03-25  Miloslav Trmač  <mitr@redhat.com>
 
 	* tmpwatch.c (logLevel, message, safe_chdir, check_fuser, max)
