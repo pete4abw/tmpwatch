@@ -1,5 +1,8 @@
 2009-10-15  Miloslav Trmač  <mitr@redhat.com>
 
+	* Makefile (VERSION): Version 2.9.16.
+	* NEWS: update.
+
 	* tmpwatch.c (struct excluded_pattern, excluded_patterns)
 	(excluded_patterns_tail, main): New option --exclude-pattern.
 	(cleanupDirectory): Implement --exclude-pattern.
