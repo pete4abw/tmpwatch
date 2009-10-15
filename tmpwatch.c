@@ -753,14 +753,18 @@ int main(int argc, char ** argv)
 
     switch (sscanf(argv[optind], "%d%c%c", &grace, &units, &garbage)) {
     case 1:
+	grace *= 60;
 	break; /* hours by default */
     case 2:
 	switch (units) {
 	case 'd':
-	    grace *= 24; /* days to hours */
+	    grace *= 24 * 60; /* days to minutes */
 	    break;
 	case 'h':
-	    break; /* hours */
+	    grace *= 60; /* hours to minutes */
+	    break;
+	case 'm':
+	    break; /* minutes */
 	default:
 	    grace = -1;  /* invalid */
 	}
@@ -777,7 +781,7 @@ int main(int argc, char ** argv)
 	message(LOG_FATAL, "directory name(s) expected\n");
     }
 
-    grace = grace * 3600;			/* to seconds from hours */
+    grace = grace * 60;		/* minutes to seconds */
 
     message(LOG_DEBUG, "grace period is %d seconds\n", grace);
 
