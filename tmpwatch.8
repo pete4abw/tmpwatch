@@ -149,6 +149,14 @@ If
 does not exist,
 it must be an absolute path that contains no symbolic links.
 
+.TP
+\fB\-X\fR, \fB\-\-exclude\-pattern=\fIpattern\fR
+Skip paths matching \fIpattern\fR;
+if a directory matches \fIpattern\fR,
+all files contained in it are skipped too.
+.I pattern
+must match an absolute path that contains no symbolic links.
+
 .SH SEE ALSO
 .IR cron (1),
 .IR ls (1),

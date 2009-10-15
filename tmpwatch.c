@@ -26,6 +26,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #include <getopt.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -85,6 +86,15 @@ struct exclusion
 
 static struct exclusion *exclusions /* = NULL */;
 static struct exclusion **exclusions_tail = &exclusions;
+
+struct excluded_pattern
+{
+    struct excluded_pattern *next;
+    char *pattern;
+};
+
+static struct excluded_pattern *excluded_patterns; /* = NULL; */
+static struct excluded_pattern **excluded_patterns_tail = &excluded_patterns;
 
 struct excluded_uid
 {
@@ -366,6 +376,29 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	if (e != NULL)
 	    continue;
 
+	if (excluded_patterns != NULL) {
+	    const struct excluded_pattern *ep;
+	    char *full, *p;
+
+	    full = malloc(strlen(fulldirname) + strlen(ent->d_name) + 2);
+	    if (full == NULL)
+		continue;
+	    p = stpcpy(full, fulldirname);
+	    p = stpcpy(p, "/");
+	    p = stpcpy(p, ent->d_name);
+	    for (ep = excluded_patterns; ep != NULL; ep = ep->next) {
+		if (fnmatch(ep->pattern, full,
+			    FNM_PATHNAME | FNM_PERIOD) == 0) {
+		    message(LOG_REALDEBUG,
+			    "matches exclusion pattern, skipping\n");
+		    break;
+		}
+	    }
+	    free(full);
+	    if (ep != NULL)
+		continue;
+	}
+
 	significant_time = 0;
 	/* Set significant_time to point at the significant field of sb -
 	 * either st_atime or st_mtime depending on the flag selected. - alh */
@@ -588,9 +621,10 @@ int main(int argc, char ** argv)
 	{ "exclude-user", required_argument, 0, 'U' },
 	{ "verbose", 0, 0, 'v' },
 	{ "exclude", required_argument, 0, 'x' },
+	{ "exclude-pattern", required_argument, 0, 'X' },
 	{ 0, 0, 0, 0 },
     };
-    const char optstring[] = "MU:acdflmqstuvx:";
+    const char optstring[] = "MU:acdflmqstuvx:X:";
 
     int grace;
     char units, garbage;
@@ -691,6 +725,16 @@ int main(int argc, char ** argv)
 	    e->next = NULL;
 	    *exclusions_tail = e;
 	    exclusions_tail = &e->next;
+	    break;
+	}
+	case 'X': {
+	    struct excluded_pattern *p;
+
+	    p = xmalloc(sizeof (*p));
+	    p->pattern = optarg;
+	    p->next = NULL;
+	    *excluded_patterns_tail = p;
+	    excluded_patterns_tail = &p->next;
 	    break;
 	}
 	case '?':
