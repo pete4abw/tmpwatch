@@ -1,3 +1,10 @@
+2009-12-22  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c (check_fuser): Use PATH_MAX, not FILENAME_MAX; the POSIX
+	definition of FILENAME_MAX does not match the intended usage.
+	(check_fuser): Prefix filename with "./" to handle filenames starting
+	with '-'.
+
 2009-10-15  Miloslav Trmač  <mitr@redhat.com>
 
 	* Makefile (VERSION): Version 2.9.16.

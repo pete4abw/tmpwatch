@@ -227,12 +227,13 @@ check_fuser(const char *filename)
     static char *const empty_environ[] = { NULL };
 
     int ret;
-    char dir[FILENAME_MAX];
+    char dir[2 + PATH_MAX];
     int pid;
 
     /* should we close all unnecessary file descriptors here? */
-    
-    snprintf(dir, sizeof(dir), "%s", filename);
+
+    /* Use "./" to protect against filenames starting with '-' */
+    snprintf(dir, sizeof(dir), "./%s", filename);
     pid = fork();
     if (pid == 0) {
 	execle(FUSER_PATH, FUSER_PATH, FUSER_ARGS, dir, NULL, empty_environ);
