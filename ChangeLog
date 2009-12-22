@@ -1,5 +1,7 @@
 2009-12-22  Miloslav Trmač  <mitr@redhat.com>
 
+	* NEWS: Update.
+
 	* tmpwatch.c (check_fuser): Use PATH_MAX, not FILENAME_MAX; the POSIX
 	definition of FILENAME_MAX does not match the intended usage.
 	(check_fuser): Prefix filename with "./" to handle filenames starting
