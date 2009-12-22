@@ -1,6 +1,6 @@
 2009-12-22  Miloslav Trmač  <mitr@redhat.com>
 
-	* Makefile (VERSION): Release 2.9.16.
+	* Makefile (VERSION): Release 2.9.17.
 	* NEWS: Update.
 
 	* tmpwatch.c (check_fuser): Use PATH_MAX, not FILENAME_MAX; the POSIX
