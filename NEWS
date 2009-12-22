@@ -1,3 +1,6 @@
+2.9.17
+* Fix handling of filenames starting with '-' with --fuser.
+
 2.9.16
 * Add --exclude-pattern.
 * Support specifying time in minutes.
