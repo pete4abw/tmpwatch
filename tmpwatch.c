@@ -21,6 +21,7 @@
  *                    Mike A. Harris <mharris@redhat.com>
  *                    Miloslav Trmac <mitr@redhat.com>
  */
+#include <config.h>
 
 #include <assert.h>
 #include <dirent.h>
@@ -43,10 +44,14 @@
 #include <utime.h>
 #include <unistd.h>
 
-#ifdef __linux
+#ifdef HAVE_MNTENT_H
 #include <mntent.h>
+#endif
+#ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
+
+#include "xalloc.h"
 
 #ifdef __GNUC__
 #define attribute__(X) __attribute__ (X)
@@ -81,7 +86,7 @@
 struct exclusion
 {
     struct exclusion *next;
-    char *dir, *file;
+    const char *dir, *file;
 };
 
 static struct exclusion *exclusions /* = NULL */;
@@ -108,7 +113,7 @@ static struct excluded_uid **excluded_uids_tail = &excluded_uids;
 static int logLevel = LOG_NORMAL;
 
 static void attribute__((format(printf, 2, 3)))
-  message(int level, char * format, ...)
+  message(int level, const char *format, ...)
 {
     va_list args;
     FILE * where = stdout;
@@ -127,23 +132,10 @@ static void attribute__((format(printf, 2, 3)))
     }
 }
 
-static void *
-xmalloc(size_t size)
-{
-    void *p;
-
-    p = malloc (size);
-    if (p != NULL || size == 0)
-	return p;
-    message(LOG_FATAL, "can not allocate memory\n");
-    /* NOTREACHED */
-    return NULL;
-}
-
 static char *
 absolute_path(const char *path, int allow_nonexistent)
 {
-    char buf[PATH_MAX + 1], *res;
+    char buf[PATH_MAX + 1];
     const char *src;
 
     src = realpath(path, buf);
@@ -154,10 +146,7 @@ absolute_path(const char *path, int allow_nonexistent)
 	    message(LOG_FATAL, "cannot resolve %s: %s\n", path,
 		    strerror(errno));
     }
-    res = strdup(src);
-    if (res == NULL)
-	message(LOG_FATAL, "can not allocate memory\n");
-    return res;
+    return xstrdup(src);
 }
 
 /* Returns 0 if OK, 2 on ENOENT, 1 on other errors */
@@ -447,21 +436,21 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    int dd;
 
 	    if ((dd = open(".", O_RDONLY)) != -1) {
-		char *dir;
-		
-		dir = malloc(strlen(fulldirname) + strlen(ent->d_name) + 2);
-		
-		if (dir != NULL) {
-		    strcpy(dir, fulldirname);
-		    strcat(dir, "/");
-		    strcat(dir, ent->d_name);
-		    if (cleanupDirectory(dir, ent->d_name,
-					 killTime, flags,
-					 st_dev, sb.st_ino) == 0) {
-			message(LOG_ERROR, "cleanup failed in %s: %s\n", dir,
-				strerror(errno));
+		char *full_subdir;
+
+		full_subdir = malloc(strlen(fulldirname) + strlen(ent->d_name)
+				     + 2);
+
+		if (full_subdir != NULL) {
+		    strcpy(full_subdir, fulldirname);
+		    strcat(full_subdir, "/");
+		    strcat(full_subdir, ent->d_name);
+		    if (cleanupDirectory(full_subdir, ent->d_name, killTime,
+					 flags, st_dev, sb.st_ino) == 0) {
+			message(LOG_ERROR, "cleanup failed in %s: %s\n",
+				full_subdir, strerror(errno));
 		    }
-		    free(dir);
+		    free(full_subdir);
 		}
 		if (fchdir(dd) != 0) {
 		    message(LOG_ERROR, "can not return to %s: %s\n",
@@ -589,14 +578,15 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 static void
 printCopyright(void)
 {
-    fprintf(stderr, "tmpwatch " VERSION " - (C) 1997-2009 Red Hat, Inc. "
+    fprintf(stderr, "tmpwatch " PACKAGE_VERSION
+	    " - (C) 1997-2009 Red Hat, Inc. "
 	    "All rights reserved.\n"
 	    "This program may be freely redistributed under the terms of the\n"
 	    "GNU General Public License version 2.\n");
 }
 
 
-static void
+static void attribute__((noreturn))
 usage(void)
 {
     printCopyright();

@@ -1,3 +1,25 @@
+2010-03-03  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c (struct exclusion): Use `const char *' for `dir' and
+	`file'.
+	(message): Use `const char *' for `format'.
+	(cleanupDirectory): Don't use two local variables named `dir'.
+	(usage): Use attribute__((noreturn)).
+
+	* tmpwatch.c (xmalloc): Remove (use the gnulib implementation).
+	(absolute_path): Use xstrdup() from gnulib.
+	* m4/gnulib-cache.m4 (gl_MODULES): Add `xalloc'.
+
+	* AUTHORS: New file.
+	* configure.ac, Makefile.am: New files, based on patches by Ben
+	Walton <bwalton@artsci.utoronto.ca>.
+	* tmpwatch.c: #include <config.h>.  Guard <mntent.h> and <paths.h>
+	with HAVE_MNTENT_H and HAVE_PATHS_H.  Use PACKAGE_VERSION.  Based
+	on patches by Ben Walton <bwalton@artsci.utoronto.ca>.
+	* install-sh
+	* Makefile
+	* README.ports: Remove.
+
 2009-12-22  Miloslav Trmač  <mitr@redhat.com>
 
 	* Makefile (VERSION): Release 2.9.17.
