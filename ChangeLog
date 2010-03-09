@@ -1,3 +1,7 @@
+2010-03-09  Miloslav Trmač  <mitr@redhat.com>
+
+	* lib/strerror.c: Fix missing #include <limits.h>.
+
 2010-03-03  Miloslav Trmač  <mitr@redhat.com>
 
 	* tmpwatch.c (struct exclusion): Use `const char *' for `dir' and
