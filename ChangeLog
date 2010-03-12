@@ -1,3 +1,8 @@
+2010-03-12  Miloslav Trmač  <mitr@redhat.com>
+
+	* m4/gnulib-cache.m4 (gl_MODULES): Add `progname'.
+	* tmpwatch.c (main): Call set_program_name.
+
 2010-03-09  Miloslav Trmač  <mitr@redhat.com>
 
 	* lib/strerror.c: Fix missing #include <limits.h>.

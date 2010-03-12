@@ -51,6 +51,7 @@
 #include <paths.h>
 #endif
 
+#include "progname.h"
 #include "xalloc.h"
 
 #ifdef __GNUC__
@@ -623,6 +624,7 @@ int main(int argc, char ** argv)
     int flags = 0, orig_dir;
     struct stat sb;
 
+    set_program_name(argv[0]);
     if (argc == 1) usage();
 
     while (1) {
