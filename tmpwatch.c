@@ -212,11 +212,17 @@ safe_chdir(const char *fulldirname, const char *reldirname, dev_t st_dev,
 static int
 check_fuser(const char *filename)
 {
+    static int fuser_exists = -1;
     static char *const empty_environ[] = { NULL };
 
     int ret;
     char dir[2 + PATH_MAX];
     int pid;
+
+    if (fuser_exists == -1)
+	fuser_exists = access(FUSER, R_OK | X_OK) == 0;
+    if (!fuser_exists)
+	return 0;
 
     /* should we close all unnecessary file descriptors here? */
 
@@ -475,8 +481,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    if (*significant_time >= killTime)
 		continue;
 
-	    if ((flags & FLAG_FUSER) && (access(FUSER, R_OK | X_OK) == 0) &&
-		check_fuser(ent->d_name)) {
+	    if ((flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
 		message(LOG_VERBOSE, "file is already in use or open: %s\n",
 			ent->d_name);
 		continue;
@@ -536,8 +541,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 		|| (!(flags & FLAG_NOSYMLINKS) && S_ISLNK(sb.st_mode))) {
 		const struct excluded_uid *u;
 
-		if ((flags & FLAG_FUSER) && !access(FUSER, R_OK|X_OK) &&
-		    check_fuser(ent->d_name)) {
+		if ((flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
 		    message(LOG_VERBOSE, "file is already in use or open: %s/%s\n",
 			    fulldirname, ent->d_name);
 		    continue;

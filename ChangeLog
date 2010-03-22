@@ -1,5 +1,8 @@
 2010-03-22  Miloslav Trmač  <mitr@redhat.com>
 
+	* tmpwatch.c (check_fuser): Move the check for FUSER existence from
+	callers.  Only check if FUSER exists once.  All callers updated.
+
 	* configure.ac: Check if fuser supports -s.
 	* tmpwatch.c (check_fuser): Redirect stdout and stderr instead of using
 	-s if !FUSER_ACCEPTS_S.
