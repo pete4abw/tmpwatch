@@ -60,8 +60,6 @@
 #define attribute__(X)
 #endif
 
-#define FUSER_ARGS "-s"
-
 #define LOG_REALDEBUG	1
 #define LOG_DEBUG	2
 #define LOG_VERBOSE	3
@@ -226,7 +224,13 @@ check_fuser(const char *filename)
     snprintf(dir, sizeof(dir), "./%s", filename);
     pid = fork();
     if (pid == 0) {
-	execle(FUSER, FUSER, FUSER_ARGS, dir, NULL, empty_environ);
+#ifdef FUSER_ACCEPTS_S
+	execle(FUSER, FUSER, "-s", dir, NULL, empty_environ);
+#else
+	freopen("/dev/null", "w", stdout);
+	freopen("/dev/null", "w", stderr);
+	execle(FUSER_PATH, FUSER_PATH, dir, NULL, empty_environ);
+#endif
 	_exit(127);
     } else {
 	waitpid(pid, &ret, 0);

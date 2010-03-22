@@ -55,6 +55,15 @@ else
    else
       AC_MSG_RESULT([yes])
       AC_DEFINE_UNQUOTED([FUSER], ["$FUSER"], [Path to fuser])
+
+      AC_MSG_CHECKING([whether fuser supports -s])
+      $FUSER -s / >/dev/null 2>&1
+      if test $? -eq 0; then
+      	 AC_MSG_RESULT([yes])
+	 AC_DEFINE([FUSER_ACCEPTS_S], [1], [Define to 1 if fuser supports -s.])
+      else
+      	 AC_MSG_RESULT([no])
+      fi
    fi
 fi
 
