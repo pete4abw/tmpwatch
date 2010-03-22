@@ -1,3 +1,12 @@
+2010-03-22  Miloslav Trmač  <mitr@redhat.com>
+
+	* configure.ac: Search for fuser, check if it works.  Define FUSER.
+	* tmpwatch.c: Remove FUSER_PATH.  Replace all uses with FUSER.
+	(check_fuser): Just #define to 0 if !FUSER.
+	(usage): Mention --fuser if supported.
+	(main): Only recognize --fuser if supported.
+	All based on a patch by Ben Walton <bwalton@artsci.utoronto.ca>
+
 2010-03-12  Miloslav Trmač  <mitr@redhat.com>
 
 	* m4/gnulib-cache.m4 (gl_MODULES): Add `progname'.

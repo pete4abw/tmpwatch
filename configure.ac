@@ -32,6 +32,32 @@ AC_FUNC_GETMNTENT
 # Checks for system services.
 AC_SYS_LARGEFILE
 
+AC_ARG_WITH([fuser],
+	AS_HELP_STRING([--with-fuser=PATH_TO_FUSER],
+		       [full path to fuser or "no" (search PATH by default)]),
+[case "$withval" in
+      no) FUSER='' ;;
+      /* | yes) FUSER=$withval ;;
+      *) AC_MSG_ERROR([Set --with-fuser to a full path or yes/no]) ;;
+esac], [FUSER=yes])
+if test "$FUSER" = yes; then
+   AC_PATH_PROG([FUSER], [fuser], [],
+      		[$PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin])
+fi
+AC_ARG_VAR([FUSER], [Path to fuser])
+AC_MSG_CHECKING([whether to use fuser])
+if test "x$FUSER" == x; then
+   AC_MSG_RESULT([no])
+else
+   $FUSER / >/dev/null 2>&1
+   if test $? -ne 0; then
+      AC_MSG_RESULT([$FUSER does not work])
+   else
+      AC_MSG_RESULT([yes])
+      AC_DEFINE_UNQUOTED([FUSER], ["$FUSER"], [Path to fuser])
+   fi
+fi
+
 # Miscellanous hackery.
 
 # Modify CFLAGS after all tests are run (some of them would fail because

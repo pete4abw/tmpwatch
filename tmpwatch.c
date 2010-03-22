@@ -60,7 +60,6 @@
 #define attribute__(X)
 #endif
 
-#define FUSER_PATH "/sbin/fuser"
 #define FUSER_ARGS "-s"
 
 #define LOG_REALDEBUG	1
@@ -211,6 +210,7 @@ safe_chdir(const char *fulldirname, const char *reldirname, dev_t st_dev,
     return 0;
 }
 
+#ifdef FUSER
 static int
 check_fuser(const char *filename)
 {
@@ -226,7 +226,7 @@ check_fuser(const char *filename)
     snprintf(dir, sizeof(dir), "./%s", filename);
     pid = fork();
     if (pid == 0) {
-	execle(FUSER_PATH, FUSER_PATH, FUSER_ARGS, dir, NULL, empty_environ);
+	execle(FUSER, FUSER, FUSER_ARGS, dir, NULL, empty_environ);
 	_exit(127);
     } else {
 	waitpid(pid, &ret, 0);
@@ -234,6 +234,9 @@ check_fuser(const char *filename)
 
     return (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0));
 }
+#else
+#define check_fuser(FILENAME) 0
+#endif
 
 static time_t *
 max(time_t *x, time_t *y)
@@ -468,8 +471,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    if (*significant_time >= killTime)
 		continue;
 
-	    if ((flags & FLAG_FUSER) &&
-		(access(FUSER_PATH, R_OK | X_OK) == 0) &&
+	    if ((flags & FLAG_FUSER) && (access(FUSER, R_OK | X_OK) == 0) &&
 		check_fuser(ent->d_name)) {
 		message(LOG_VERBOSE, "file is already in use or open: %s\n",
 			ent->d_name);
@@ -530,7 +532,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 		|| (!(flags & FLAG_NOSYMLINKS) && S_ISLNK(sb.st_mode))) {
 		const struct excluded_uid *u;
 
-		if (flags & FLAG_FUSER && !access(FUSER_PATH, R_OK|X_OK) &&
+		if ((flags & FLAG_FUSER) && !access(FUSER, R_OK|X_OK) &&
 		    check_fuser(ent->d_name)) {
 		    message(LOG_VERBOSE, "file is already in use or open: %s/%s\n",
 			    fulldirname, ent->d_name);
@@ -590,9 +592,18 @@ printCopyright(void)
 static void attribute__((noreturn))
 usage(void)
 {
+    static const char msg[] = "tmpwatch [-u|-m|-c] [-MUadfqtvx] [--verbose] "
+	"[--force] [--all] [--nodirs] [--nosymlinks] [--test] [--quiet] "
+	"[--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] "
+	"[--exclude-user <user>] "
+#ifdef FUSER
+	"[--fuser] "
+#endif
+	"<hours-untouched> <dirs>\n";
+
     printCopyright();
     fprintf(stderr, "\n");
-    fprintf(stderr, "tmpwatch [-u|-m|-c] [-MUadfqtvx] [--verbose] [--force] [--all] [--nodirs] [--nosymlinks] [--test] [--quiet] [--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] [--exclude-user <user>] <hours-untouched> <dirs>\n");
+    fprintf(stderr, msg);
     exit(1);
 }
 
@@ -608,7 +619,9 @@ int main(int argc, char ** argv)
 	{ "ctime", 0, 0, 'c' },
 	{ "dirmtime", 0, 0, 'M' },
 	{ "quiet", 0, 0, 'q' },
+#ifdef FUSER
 	{ "fuser", 0, 0, 's' },
+#endif
 	{ "test", 0, 0, 't' },
 	{ "exclude-user", required_argument, 0, 'U' },
 	{ "verbose", 0, 0, 'v' },
