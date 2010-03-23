@@ -1,3 +1,7 @@
+2.10.1
+* Fix Ben Walton's e-mail address
+* Drop obsolete HP-UX warning in tmpwatch.8.
+
 2.10
 * Migrate to autotools, use gnulib for portability to non-Linux systems.
   Most work done by Ben Walton <bwalton@artsci.utoronto.ca>.

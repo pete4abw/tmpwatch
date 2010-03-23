@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT([tmpwatch], [2.10], [https://fedorahosted.org/tmpwatch/])
+AC_INIT([tmpwatch], [2.10.1], [https://fedorahosted.org/tmpwatch/])
 AC_PREREQ([2.63])
 AC_CONFIG_SRCDIR([tmpwatch.c])
 AC_CONFIG_HEADERS([config.h])

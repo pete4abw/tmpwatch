@@ -1,5 +1,8 @@
 2010-03-23  Miloslav Trmač  <mitr@redhat.com>
 
+	* configure.ac: Release 2.10.1.
+	* NEWS: Update.
+
 	* NEWS: Fix Ben Walton's e-mail address.
 
 	* tmpwatch.8 (WARNINGS): Drop, gnulib's getopt supports long options.
