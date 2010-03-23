@@ -1,5 +1,7 @@
 2010-03-23  Miloslav Trmač  <mitr@redhat.com>
 
+	* NEWS: Fix Ben Walton's e-mail address.
+
 	* tmpwatch.8 (WARNINGS): Drop, gnulib's getopt supports long options.
 
 	* Makefile.am (archive): Drop, the target requires a specific gnulib
@@ -8,7 +10,7 @@
 	* configure.ac: Release 2.10.
 	* NEWS: Update.
 
-2010-03-23  Ben Walton  <bwalton@cquest.utoronto.ca>
+2010-03-23  Ben Walton  <bwalton@artsci.utoronto.ca>
 
 	* tmpwatch.c (check_fuser): s/FUSER_PATH/FUSER/ in one more place.
 
