@@ -235,7 +235,7 @@ check_fuser(const char *filename)
 #else
 	freopen("/dev/null", "w", stdout);
 	freopen("/dev/null", "w", stderr);
-	execle(FUSER_PATH, FUSER_PATH, dir, NULL, empty_environ);
+	execle(FUSER, FUSER, dir, NULL, empty_environ);
 #endif
 	_exit(127);
     } else {

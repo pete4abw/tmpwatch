@@ -1,3 +1,7 @@
+2010-03-23  Ben Walton  <bwalton@cquest.utoronto.ca>
+
+	* tmpwatch.c (check_fuser): s/FUSER_PATH/FUSER/ in one more place.
+
 2010-03-22  Miloslav Trmač  <mitr@redhat.com>
 
 	* tmpwatch.c (check_fuser): Move the check for FUSER existence from
