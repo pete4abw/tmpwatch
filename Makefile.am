@@ -19,11 +19,3 @@ force-tag:
 
 tag:
 	cd $(top_srcdir); hg tag $(HGTAG)
-
-archive:
-	rm -fr /tmp/$(PACKAGE)-export-tmp
-	hg clone -r $(HGTAG) $(abs_top_srcdir) /tmp/$(PACKAGE)-export-tmp
-	cd /tmp/$(PACKAGE)-export-tmp; autoreconf -fis ; ./configure; make dist
-	mv /tmp/$(PACKAGE)-export-tmp/$(PACKAGE)-$(VERSION).tar.bz2 .
-	rm -fr /tmp/$(PACKAGE)-export-tmp
-	@echo Package is in \"$(PACKAGE)-$(VERSION).tar.bz2\".

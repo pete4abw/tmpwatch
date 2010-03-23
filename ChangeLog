@@ -1,5 +1,8 @@
 2010-03-23  Miloslav Trmač  <mitr@redhat.com>
 
+	* Makefile.am (archive): Drop, the target requires a specific gnulib
+	checkout.
+
 	* configure.ac: Release 2.10.
 	* NEWS: Update.
 
