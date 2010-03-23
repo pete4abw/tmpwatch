@@ -1,5 +1,7 @@
 2010-03-23  Miloslav Trmač  <mitr@redhat.com>
 
+	* tmpwatch.8 (WARNINGS): Drop, gnulib's getopt supports long options.
+
 	* Makefile.am (archive): Drop, the target requires a specific gnulib
 	checkout.
 
