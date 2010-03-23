@@ -1,3 +1,10 @@
+2.10
+* Migrate to autotools, use gnulib for portability to non-Linux systems.
+  Most work done by Ben Walton <bwalton@cquest.utoronto.ca>.
+* Only support fuser if it is available at build time.  Handle fuser
+  implementation that don't support the `-s' option.  Patches by Ben Walton
+  <bwalton@cquest.utoronto.ca>.
+
 2.9.17
 * Fix handling of filenames starting with '-' with --fuser.
 
