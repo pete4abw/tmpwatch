@@ -1,3 +1,7 @@
+2010-07-23  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.8: Fix description of --force.
+
 2010-06-12  Miloslav Trmač  <mitr@redhat.com>
 
 	* configure.ac: Define PACKAGE_URL.
