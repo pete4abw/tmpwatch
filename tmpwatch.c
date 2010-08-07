@@ -600,10 +600,10 @@ printCopyright(void)
 static void attribute__((noreturn))
 usage(void)
 {
-    static const char msg[] = "tmpwatch [-u|-m|-c] [-MUadfqtvx] [--verbose] "
+    static const char msg[] = "tmpwatch [-u|-m|-c] [-MUXadfqtvx] [--verbose] "
 	"[--force] [--all] [--nodirs] [--nosymlinks] [--test] [--quiet] "
 	"[--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] "
-	"[--exclude-user <user>] "
+	"[--exclude-user <user>] [--exclude-pattern <pattern>]"
 #ifdef FUSER
 	"[--fuser] "
 #endif
