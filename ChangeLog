@@ -1,5 +1,7 @@
 2010-08-07  Miloslav Trmač  <mitr@redhat.com>
 
+	* tmpwatch.c (usage): Add missing space.
+
 	* tmpwatch.8: Add -X to SYNOPSIS as well.
 
 	* tmpwatch.c (usage): Mention -X, --exclude-pattern.
