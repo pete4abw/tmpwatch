@@ -117,14 +117,14 @@ static void attribute__((format(printf, 2, 3)))
     FILE * where = stdout;
 
     if (level >= logLevel) {
-	va_start(args, format);
-
 	if (level > LOG_NORMAL) {
 	    where = stderr;
 	    fprintf(where, "error: ");
 	}
 
+	va_start(args, format);
 	vfprintf(where, format, args);
+	va_end(args);
 
 	if (level == LOG_FATAL) exit(1);
     }
@@ -344,6 +344,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	if (errno) {
 	    message(LOG_ERROR, "error reading directory entry: %s\n", 
 		    strerror(errno));
+	    (void)closedir(dir);
 	    return 0;
 	}
 	if (!ent) break;
@@ -389,7 +390,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 		continue;
 	    p = stpcpy(full, fulldirname);
 	    p = stpcpy(p, "/");
-	    p = stpcpy(p, ent->d_name);
+	    stpcpy(p, ent->d_name);
 	    for (ep = excluded_patterns; ep != NULL; ep = ep->next) {
 		if (fnmatch(ep->pattern, full,
 			    FNM_PATHNAME | FNM_PERIOD) == 0) {

@@ -1,3 +1,9 @@
+2011-03-11  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c (cleanupDirectory): Close "dir" on error.
+	(cleanupDirectory): Remove an unnecessary assignment.
+	(message): Call va_end().
+
 2010-08-07  Miloslav Trmač  <mitr@redhat.com>
 
 	* tmpwatch.c (usage): Add missing space.
