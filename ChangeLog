@@ -1,5 +1,7 @@
 2011-03-21  Miloslav Trmač  <mitr@redhat.com>
 
+	* HACKING: New file.
+
 	* bind-mount.h:
 	* bind-mount.c: New files, based on mlocate.
 	* Makefile.am (tmpwatch_SOURCES): Add bind-mount.[ch].
