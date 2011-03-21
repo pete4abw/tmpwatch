@@ -12,6 +12,7 @@ sbin_PROGRAMS = tmpwatch
 dist_man8_MANS = tmpwatch.8
 
 ## Rules
+tmpwatch_SOURCES = bind-mount.c bind-mount.h tmpwatch.c
 tmpwatch_LDADD = lib/libgnu.a $(LIBINTL)
 
 force-tag:

@@ -41,7 +41,8 @@ which are used for temporary holding space such as /tmp.
 When changing directories, \fBtmpwatch\fR is very sensitive to possible
 race conditions and will exit with an error if one is detected. It does
 not follow symbolic links in the directories it's cleaning (even if a
-symbolic link is given as its argument), will not switch filesystems,
+symbolic link is given as its argument),
+does not switch filesystems (including non-trivial bind mounts),
 skips \fIlost+found\fR directories owned by the root user,
 and only removes empty directories, regular files, and symbolic links.
 

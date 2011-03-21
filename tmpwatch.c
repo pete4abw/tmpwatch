@@ -54,6 +54,8 @@
 #include "progname.h"
 #include "xalloc.h"
 
+#include "bind-mount.h"
+
 #ifdef __GNUC__
 #define attribute__(X) __attribute__ (X)
 #else
@@ -460,8 +462,9 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 		    strcpy(full_subdir, fulldirname);
 		    strcat(full_subdir, "/");
 		    strcat(full_subdir, ent->d_name);
-		    if (cleanupDirectory(full_subdir, ent->d_name, killTime,
-					 flags, st_dev, sb.st_ino) == 0) {
+		    if (!is_bind_mount(full_subdir)
+			&& cleanupDirectory(full_subdir, ent->d_name, killTime,
+					    flags, st_dev, sb.st_ino) == 0) {
 			message(LOG_ERROR, "cleanup failed in %s: %s\n",
 				full_subdir, strerror(errno));
 		    }
@@ -497,7 +500,9 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 
 		if (!(flags & FLAG_TEST)) {
 		    if (rmdir(ent->d_name)) {
-			if (errno != ENOENT && errno != ENOTEMPTY) {
+			/* EBUSY is returned for a mount point. */
+			if (errno != ENOENT && errno != ENOTEMPTY
+			    && errno != EBUSY) {
 			    message(LOG_ERROR, "failed to rmdir %s/%s: %s\n", 
 				    fulldirname, ent->d_name, strerror(errno));
 			}
@@ -648,6 +653,8 @@ int main(int argc, char ** argv)
 
     set_program_name(argv[0]);
     if (argc == 1) usage();
+
+    init_bind_mount_paths();
 
     while (1) {
 	int arg, long_index;

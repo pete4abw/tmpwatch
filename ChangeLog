@@ -1,3 +1,16 @@
+2011-03-21  Miloslav Trmač  <mitr@redhat.com>
+
+	* bind-mount.h:
+	* bind-mount.c: New files, based on mlocate.
+	* Makefile.am (tmpwatch_SOURCES): Add bind-mount.[ch].
+	* tmpwatch.c (cleanupDirectory): Skip non-trivial bind mounts.  Silence
+	errors when trying to remove an empty (bind) mount point.
+	(main): Initialize data for is_bind_mount().
+	* tmpwatch.8: Document that bind mounts are skipped.
+
+	* m4/gnulib-cache.m4: Add `stat-time', `timespec'.
+	* lib/stat-time.h: Silence some warnings.
+
 2011-03-11  Miloslav Trmač  <mitr@redhat.com>
 
 	* tmpwatch.c (cleanupDirectory): Close "dir" on error.
