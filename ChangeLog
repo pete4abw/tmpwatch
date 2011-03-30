@@ -1,5 +1,7 @@
 2011-03-31  Miloslav Trmač  <mitr@redhat.com>
 
+	* m4/gnulib-cache.m4: Remove stat-time and timespec again.
+
 	* bind-mount.c: Use __linux for #ifdef.
 	(MOUNTINFO_PATH, OBSTACK_OBJECT_SIZE, struct mount, mount_entries)
 	(num_mount_entries, mount_data_obstack, mount_data_mark)
