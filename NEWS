@@ -1,3 +1,7 @@
+2.10.2
+* Don't follow (non-trivial) bind mounts.
+* Minor bug and documentation fixes.
+
 2.10.1
 * Fix Ben Walton's e-mail address
 * Drop obsolete HP-UX warning in tmpwatch.8.

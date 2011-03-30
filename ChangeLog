@@ -1,5 +1,8 @@
 2011-03-31  Miloslav Trmač  <mitr@redhat.com>
 
+	* configure.ac: Release 2.10.2.
+	* NEWS: Update.
+
 	* m4/gnulib-cache.m4: Remove stat-time and timespec again.
 
 	* bind-mount.c: Use __linux for #ifdef.
