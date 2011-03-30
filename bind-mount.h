@@ -1,4 +1,4 @@
-/* bind-mount.h -- is_bind_mount()
+/* bind-mount.h -- bind mount detection
  *
  * Copyright (C) 2005, 2007, 2008 Red Hat, Inc.  All rights reserved.
  *
@@ -25,14 +25,14 @@
 #include <stdbool.h>
 
 /* Use the same condition as in bind-mount.c! */
-#if defined(HAVE_MNTENT_H) && defined(HAVE_PATHS_H)
+#ifdef __linux
 
 /* Return true if PATH is a destination of a bind mount.
    (Bind mounts "to self" are ignored.) */
 extern bool is_bind_mount(const char *path);
 
-/* Initialize is_bind_mount state */
-extern void init_bind_mount_paths(void);
+/* Initialize state for is_bind_mount(). */
+extern void bind_mount_init(void);
 
 #else /* !(defined(HAVE_MNTENT_H) && defined(HAVE_PATHS_H)) */
 
@@ -42,10 +42,10 @@ static bool is_bind_mount(const char *path)
     return false;
 }
 
-static void init_bind_mount_paths(void)
+static void bind_mount_init(void)
 {
 }
 
-#endif /* !(defined(HAVE_MNTENT_H) && defined(HAVE_PATHS_H)) */
+#endif /* __linux */
 
 #endif

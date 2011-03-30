@@ -654,7 +654,7 @@ int main(int argc, char ** argv)
     set_program_name(argv[0]);
     if (argc == 1) usage();
 
-    init_bind_mount_paths();
+    bind_mount_init();
 
     while (1) {
 	int arg, long_index;
