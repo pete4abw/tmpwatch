@@ -1,5 +1,9 @@
 2011-03-31  Miloslav Trmač  <mitr@redhat.com>
 
+	* bind-mount.c (read_mount_line): Remove an unused variable.
+
+2011-03-31  Miloslav Trmač  <mitr@redhat.com>
+
 	* configure.ac: Release 2.10.2.
 	* NEWS: Update.
 
