@@ -352,7 +352,8 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	if (!ent) break;
 
 	if (lstat(ent->d_name, &sb)) {
-	    if (errno != ENOENT)
+	    /* FUSE mounts by different users return EACCES by default. */
+	    if (errno != ENOENT && errno != EACCES)
 		message(LOG_ERROR, "failed to lstat %s/%s: %s\n",
 			fulldirname, ent->d_name, strerror(errno));
 	    continue;

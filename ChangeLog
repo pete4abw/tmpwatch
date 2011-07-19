@@ -1,3 +1,8 @@
+2011-07-19  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c (cleanupDirectory): Ignore EACCES on lstat(), this can be
+	routinely returned by FUSE.
+
 2011-04-28  Miloslav Trmač  <mitr@redhat.com>
 
 	* bind-mount.c (read_mount_entry): Fix an EOF check.
