@@ -1,5 +1,8 @@
 2011-07-19  Miloslav Trmač  <mitr@redhat.com>
 
+	* configure.ac: Release 2.10.3.
+	* NEWS: Update.
+
 	* tmpwatch.c (cleanupDirectory): Ignore EACCES on lstat(), this can be
 	routinely returned by FUSE.
 

@@ -1,3 +1,7 @@
+2.10.3
+* Don't report EACCES errors, they can be routinely returned by FUSE mounts.
+* Minor bug fixes in bind mount handling.
+
 2.10.2
 * Don't follow (non-trivial) bind mounts.
 * Minor bug and documentation fixes.
