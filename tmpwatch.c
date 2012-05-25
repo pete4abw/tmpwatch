@@ -70,7 +70,9 @@
 #define LOG_FATAL	6
 
 #define FLAG_FORCE	(1 << 0)
-#define FLAG_ALLFILES	(1 << 1)   /* normally just files, dirs are removed */
+/* normally just files, dirs, and sockets older than (boot time - grace period)
+   are removed */
+#define FLAG_ALLFILES	(1 << 1)
 #define FLAG_TEST	(1 << 2)
 #define FLAG_ATIME	(1 << 3)
 #define FLAG_MTIME	(1 << 4)
@@ -111,6 +113,7 @@ static struct excluded_uid *excluded_uids /* = NULL */;
 static struct excluded_uid **excluded_uids_tail = &excluded_uids;
 
 static time_t kill_time;
+static time_t socket_kill_time; /* 0 = never */
 
 static int config_flags; /* = 0; */
 
@@ -515,8 +518,14 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 		}
 	    }
 	} else {
-	    if (*significant_time >= kill_time)
-		continue;
+	    if (S_ISSOCK(sb.st_mode)) {
+		if (socket_kill_time == 0
+		    || *significant_time >= socket_kill_time)
+		    continue;
+	    } else { /* Not a socket */
+		if (*significant_time >= kill_time)
+		    continue;
+	    }
 
 #ifdef __linux
 	    /* check if it is an ext3 journal file */
@@ -548,7 +557,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 #endif
 
 	    if ((config_flags & FLAG_ALLFILES) != 0
-		|| S_ISREG(sb.st_mode)
+		|| S_ISREG(sb.st_mode) || S_ISSOCK(sb.st_mode)
 		|| ((config_flags & FLAG_NOSYMLINKS) == 0
 		    && S_ISLNK(sb.st_mode))) {
 		const struct excluded_uid *u;
@@ -627,6 +636,53 @@ usage(void)
     fprintf(stderr, msg);
     exit(1);
 }
+
+/* Set up kill_time and socket_kill_time for GRACE_MINUTES.
+
+   Connecting to an AF_UNIX socket does not update any of its times, so we
+   can't blindly remove a socket with old times - but any process listening on
+   that socket can not survive a reboot, so sockets that predate the time of
+   our boot are fair game.  We still add the grace period, both as a layer of
+   extra protection, and to let users examine contents of the temporary
+   directory for at least for some time.
+ */
+static void
+compute_kill_times(int grace_minutes)
+{
+    int grace_seconds;
+
+    grace_seconds = grace_minutes * 60;
+    message(LOG_DEBUG, "grace period is %d seconds\n", grace_seconds);
+
+    kill_time = time(NULL) - grace_seconds;
+    if ((config_flags & FLAG_ALLFILES) != 0)
+	socket_kill_time = kill_time;
+    else {
+/* We want __linux because the behavior of CLOCK_BOOTTIME is not standardized.
+   On Linux, it is the time since system boot, including the time spent in
+   sleep mode or hibernation. */
+#if defined (HAVE_CLOCK_GETTIME) && defined (CLOCK_BOOTTIME) && defined (__linux)
+	struct timespec real_clock, boot_clock;
+	time_t boot_time;
+
+	if (clock_gettime(CLOCK_REALTIME, &real_clock) != 0
+	    || clock_gettime(CLOCK_BOOTTIME, &boot_clock) != 0)
+	    message(LOG_FATAL, "Error determining boot time: %s\n",
+		    strerror(errno));
+	boot_time = real_clock.tv_sec - boot_clock.tv_sec;
+	if (real_clock.tv_nsec < boot_clock.tv_nsec)
+	    boot_time--;
+	/* We don't get the values of the two clocks at exactly the same moment,
+	   let's add a few seconds to be extra sure. */
+	boot_time -= 2;
+
+	socket_kill_time = boot_time - grace_seconds;
+#else
+	socket_kill_time = 0; /* Never remove sockets */
+#endif
+    }
+}
+
 
 int main(int argc, char ** argv)
 {
@@ -804,16 +860,12 @@ int main(int argc, char ** argv)
     if (grace < 0)
 	message(LOG_FATAL, "bad time argument %s\n", argv[optind]);
 
+    compute_kill_times(grace);
+
     optind++;
     if (optind == argc) {
 	message(LOG_FATAL, "directory name(s) expected\n");
     }
-
-    grace = grace * 60;		/* minutes to seconds */
-
-    message(LOG_DEBUG, "grace period is %d seconds\n", grace);
-
-    kill_time = time(NULL) - grace;
 
     /* set stdout line buffered so it is flushed before each fork */
     setvbuf(stdout, NULL, _IOLBF, 0);

@@ -1,3 +1,19 @@
+2012-05-26  Miloslav Trmač  <mitr@redhat.com>
+
+	* tmpwatch.c (FLAG_ALLFILES): Update comment.
+	(socket_kill_time): New variable, taking over FLAG_ALLFILES handling
+	for sockets.
+	(cleanupDirectory): Use socket_kill_time for sockets, and depend on it
+	for FLAG_ALLFILES handling of sockets.
+	(main): Move kill_time initialization ...
+	(compute_kill_times): ... to this new function.  Set socket_kill_time
+	to (time of last boot - grace period) on Linux.
+	* tmpwatch.8: Document that unused socketes may be removed, and that
+	-a reverts to purely time-based behavior for them.
+	* m4/gnulib-cache.m4: Add module clock-time.
+	* Makefile.am (tmpwatch_LDADD): Use libraries necessary for
+	clock_gettime ().
+
 2012-05-25  Miloslav Trmač  <mitr@redhat.com>
 
 	* tmpwatch.c (cleanupDirectory): Simplify control flow a little.

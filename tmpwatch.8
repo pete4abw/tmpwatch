@@ -44,7 +44,8 @@ not follow symbolic links in the directories it's cleaning (even if a
 symbolic link is given as its argument),
 does not switch filesystems (including non-trivial bind mounts),
 skips \fIlost+found\fR directories owned by the root user,
-and only removes empty directories, regular files, and symbolic links.
+and only removes empty directories, regular files, symbolic links, and on some
+systems also unused sockets.
 
 By default, \fBtmpwatch\fR dates files by their atime (access time), not
 their mtime (modification time). If files aren't being removed when
@@ -105,6 +106,10 @@ directories.
 .TP
 \fB-a, -\-all\fR
 Remove all file types, not just regular files, symbolic links and directories.
+On systems where
+.B tmpwatch
+can remove unused sockets, make the decision only based on file times,
+ignoring possible use of the socket.
 
 .TP
 \fB-d, -\-nodirs\fR
