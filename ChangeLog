@@ -1,5 +1,8 @@
 2012-05-25  Miloslav Trmač  <mitr@redhat.com>
 
+	* tmpwatch.c (safe_chdir, cleanupDirectory, main): Replace implicit
+	comparisions to zero with explicit comparisons.
+
 	* tmpwatch.c (kill_time, config_flags): New variables.
 	(cleanupDirectory): Use `kill_time' and `config_flags' instead of
 	passing around parameters `killTime' and `flags'.

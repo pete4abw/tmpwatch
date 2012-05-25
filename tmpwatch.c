@@ -185,7 +185,7 @@ safe_chdir(const char *fulldirname, const char *reldirname, dev_t st_dev,
 	return 1;
     }
 
-    if (chdir(reldirname)) {
+    if (chdir(reldirname) != 0) {
 	if (errno == ENOENT)
 	    return 2;
 	message(LOG_ERROR, "chdir to directory %s failed: %s\n",
@@ -193,7 +193,7 @@ safe_chdir(const char *fulldirname, const char *reldirname, dev_t st_dev,
 	return 1;
     }
 
-    if (lstat(".", &sb2)) {
+    if (lstat(".", &sb2) != 0) {
 	message(LOG_ERROR, "second lstat() of directory %s failed: %s\n",
 		fulldirname, strerror(errno));
 	return 1;
@@ -314,7 +314,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	return 1;
     }
 
-    if (lstat(".", &here)) {
+    if (lstat(".", &here) != 0) {
 	message(LOG_ERROR, "error stat()ing current directory %s: %s\n",
 		fulldirname, strerror(errno));
 	return 0;
@@ -342,20 +342,21 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	return 0;
     }
 
-    do {
+    for (;;) {
 	struct exclusion *e;
 
 	errno = 0;
 	ent = readdir(dir);
-	if (errno) {
+	if (errno != 0) {
 	    message(LOG_ERROR, "error reading directory entry: %s\n", 
 		    strerror(errno));
 	    (void)closedir(dir);
 	    return 0;
 	}
-	if (!ent) break;
+	if (ent == NULL)
+	    break;
 
-	if (lstat(ent->d_name, &sb)) {
+	if (lstat(ent->d_name, &sb) != 0) {
 	    /* FUSE mounts by different users return EACCES by default. */
 	    if (errno != ENOENT && errno != EACCES)
 		message(LOG_ERROR, "failed to lstat %s/%s: %s\n",
@@ -414,14 +415,14 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	significant_time = 0;
 	/* Set significant_time to point at the significant field of sb -
 	 * either st_atime or st_mtime depending on the flag selected. - alh */
-	if ((config_flags & FLAG_DIRMTIME) && S_ISDIR(sb.st_mode))
+	if ((config_flags & FLAG_DIRMTIME) != 0 && S_ISDIR(sb.st_mode))
 	    significant_time = max(significant_time, &sb.st_mtime);
 	/* The else here (and not elsewhere) is intentional */
-	else if (config_flags & FLAG_ATIME)
+	else if ((config_flags & FLAG_ATIME) != 0)
 	    significant_time = max(significant_time, &sb.st_atime);
-	if (config_flags & FLAG_MTIME)
+	if ((config_flags & FLAG_MTIME) != 0)
 	    significant_time = max(significant_time, &sb.st_mtime);
-	if (config_flags & FLAG_CTIME) {
+	if ((config_flags & FLAG_CTIME) != 0) {
 	    /* Even when we were told to use ctime, for directories we use
 	       mtime, because when a file in a directory is deleted, its
 	       ctime will change, and there's no way we can change it
@@ -442,8 +443,8 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	message(LOG_REALDEBUG, "taking as significant time: %s",
 		ctime(significant_time));
 
-	if (!sb.st_uid && !(config_flags & FLAG_FORCE)
-	    && !(sb.st_mode & S_IWUSR)) {
+	if (sb.st_uid == 0 && (config_flags & FLAG_FORCE) == 0
+	    && (sb.st_mode & S_IWUSR) == 0) {
 	    message(LOG_DEBUG, "non-writeable file owned by root "
 		    "skipped: %s\n", ent->d_name);;
 	    continue;
@@ -490,7 +491,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	    if (*significant_time >= kill_time)
 		continue;
 
-	    if ((config_flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
+	    if ((config_flags & FLAG_FUSER) != 0 && check_fuser(ent->d_name)) {
 		message(LOG_VERBOSE, "file is already in use or open: %s\n",
 			ent->d_name);
 		continue;
@@ -499,11 +500,11 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	    /* we should try to remove the directory after cleaning up its
 	       contents, as it should contain no files.  Skip if we have
 	       specified the "no directories" flag. */
-	    if (!(config_flags & FLAG_NODIRS)) {
+	    if ((config_flags & FLAG_NODIRS) == 0) {
 		message(LOG_VERBOSE, "removing directory %s/%s if empty\n",
 			fulldirname, ent->d_name);
 
-		if (!(config_flags & FLAG_TEST)) {
+		if ((config_flags & FLAG_TEST) == 0) {
 		    if (rmdir(ent->d_name)) {
 			/* EBUSY is returned for a mount point. */
 			if (errno != ENOENT && errno != ENOTEMPTY
@@ -547,12 +548,14 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	    }
 #endif
 
-	    if ((config_flags & FLAG_ALLFILES)
+	    if ((config_flags & FLAG_ALLFILES) != 0
 		|| S_ISREG(sb.st_mode)
-		|| (!(config_flags & FLAG_NOSYMLINKS) && S_ISLNK(sb.st_mode))) {
+		|| ((config_flags & FLAG_NOSYMLINKS) == 0
+		    && S_ISLNK(sb.st_mode))) {
 		const struct excluded_uid *u;
 
-		if ((config_flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
+		if ((config_flags & FLAG_FUSER) != 0
+		    && check_fuser(ent->d_name)) {
 		    message(LOG_VERBOSE, "file is already in use or open: %s/%s\n",
 			    fulldirname, ent->d_name);
 		    continue;
@@ -571,14 +574,14 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 		message(LOG_VERBOSE, "removing file %s/%s\n",
 			fulldirname, ent->d_name);
 	    
-		if (!(config_flags & FLAG_TEST)) {
-		    if (unlink(ent->d_name) && errno != ENOENT) 
+		if ((config_flags & FLAG_TEST) == 0) {
+		    if (unlink(ent->d_name) != 0 && errno != ENOENT) 
 			message(LOG_ERROR, "failed to unlink %s: %s\n", 
 				fulldirname, ent->d_name);
 		}
 	    }
 	}
-    } while (ent);
+    }
 
     if (closedir(dir) == -1) {
 	message(LOG_ERROR, "closedir of %s failed: %s\n",
@@ -770,7 +773,7 @@ int main(int argc, char ** argv)
     }
   
     /* Default to atime if neither was specified. - alh */
-    if (!(config_flags & (FLAG_ATIME | FLAG_MTIME | FLAG_CTIME)))
+    if ((config_flags & (FLAG_ATIME | FLAG_MTIME | FLAG_CTIME)) == 0)
 	config_flags |= FLAG_ATIME;
 
     if (optind == argc) {
@@ -823,7 +826,7 @@ int main(int argc, char ** argv)
 	char *path;
 
 	path = absolute_path(argv[optind], 0);
-	if (lstat(path, &sb)) {
+	if (lstat(path, &sb) != 0) {
 	    message(LOG_ERROR, "lstat() of directory %s failed: %s\n", path,
 		    strerror(errno));
 	    exit(1);
