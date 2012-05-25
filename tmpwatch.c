@@ -447,15 +447,15 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	    message(LOG_DEBUG, "non-writeable file owned by root "
 		    "skipped: %s\n", ent->d_name);;
 	    continue;
-	} else
-	    /* One more check for a different device.  Try hard not to go
-	       onto a different device.
-	    */
-	    if (sb.st_dev != st_dev || here.st_dev != st_dev) {
+	}
+	/* One more check for a different device.  Try hard not to go onto a
+	   different device. */
+	if (sb.st_dev != st_dev || here.st_dev != st_dev) {
 	    message(LOG_VERBOSE, "file on different device skipped: %s\n",
 		    ent->d_name);
 	    continue;
-	} else if (S_ISDIR(sb.st_mode)) {
+	}
+	if (S_ISDIR(sb.st_mode)) {
 	    int dd;
 
 	    if ((dd = open(".", O_RDONLY)) != -1) {
