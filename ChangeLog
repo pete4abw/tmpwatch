@@ -1,5 +1,11 @@
 2012-05-25  Miloslav Trmač  <mitr@redhat.com>
 
+	* tmpwatch.c (kill_time, config_flags): New variables.
+	(cleanupDirectory): Use `kill_time' and `config_flags' instead of
+	passing around parameters `killTime' and `flags'.
+	(main): Use `kill_time' and `config_flags' instead of local variables
+	`killTime' and `flags'.
+
 	* bind-mount.c (bind_mount_paths_index): Remove an unused variable.
 	(is_bind_mount): Stop setting bind_mount_paths_index.
 

@@ -110,6 +110,10 @@ struct excluded_uid
 static struct excluded_uid *excluded_uids /* = NULL */;
 static struct excluded_uid **excluded_uids_tail = &excluded_uids;
 
+static time_t kill_time;
+
+static int config_flags; /* = 0; */
+
 static int logLevel = LOG_NORMAL;
 
 static void attribute__((format(printf, 2, 3)))
@@ -286,8 +290,8 @@ is_mount_point(const char *path)
 #endif
 
 static int
-cleanupDirectory(const char * fulldirname, const char *reldirname,
-		 time_t killTime, int flags, dev_t st_dev, ino_t st_ino)
+cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
+		 ino_t st_ino)
 {
     DIR *dir;
     struct dirent *ent;
@@ -410,14 +414,14 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	significant_time = 0;
 	/* Set significant_time to point at the significant field of sb -
 	 * either st_atime or st_mtime depending on the flag selected. - alh */
-	if ((flags & FLAG_DIRMTIME) && S_ISDIR(sb.st_mode))
+	if ((config_flags & FLAG_DIRMTIME) && S_ISDIR(sb.st_mode))
 	    significant_time = max(significant_time, &sb.st_mtime);
 	/* The else here (and not elsewhere) is intentional */
-	else if (flags & FLAG_ATIME)
+	else if (config_flags & FLAG_ATIME)
 	    significant_time = max(significant_time, &sb.st_atime);
-	if (flags & FLAG_MTIME)
+	if (config_flags & FLAG_MTIME)
 	    significant_time = max(significant_time, &sb.st_mtime);
-	if (flags & FLAG_CTIME) {
+	if (config_flags & FLAG_CTIME) {
 	    /* Even when we were told to use ctime, for directories we use
 	       mtime, because when a file in a directory is deleted, its
 	       ctime will change, and there's no way we can change it
@@ -438,7 +442,8 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	message(LOG_REALDEBUG, "taking as significant time: %s",
 		ctime(significant_time));
 
-	if (!sb.st_uid && !(flags & FLAG_FORCE) && !(sb.st_mode & S_IWUSR)) {
+	if (!sb.st_uid && !(config_flags & FLAG_FORCE)
+	    && !(sb.st_mode & S_IWUSR)) {
 	    message(LOG_DEBUG, "non-writeable file owned by root "
 		    "skipped: %s\n", ent->d_name);;
 	    continue;
@@ -464,11 +469,10 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 		    strcat(full_subdir, "/");
 		    strcat(full_subdir, ent->d_name);
 		    if (!is_bind_mount(full_subdir)
-			&& cleanupDirectory(full_subdir, ent->d_name, killTime,
-					    flags, st_dev, sb.st_ino) == 0) {
+			&& cleanupDirectory(full_subdir, ent->d_name, st_dev,
+					    sb.st_ino) == 0)
 			message(LOG_ERROR, "cleanup failed in %s: %s\n",
 				full_subdir, strerror(errno));
-		    }
 		    free(full_subdir);
 		}
 		if (fchdir(dd) != 0) {
@@ -483,10 +487,10 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 			fulldirname, ent->d_name, strerror(errno));
 	    }
 
-	    if (*significant_time >= killTime)
+	    if (*significant_time >= kill_time)
 		continue;
 
-	    if ((flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
+	    if ((config_flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
 		message(LOG_VERBOSE, "file is already in use or open: %s\n",
 			ent->d_name);
 		continue;
@@ -495,11 +499,11 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    /* we should try to remove the directory after cleaning up its
 	       contents, as it should contain no files.  Skip if we have
 	       specified the "no directories" flag. */
-	    if (!(flags & FLAG_NODIRS)) {
+	    if (!(config_flags & FLAG_NODIRS)) {
 		message(LOG_VERBOSE, "removing directory %s/%s if empty\n",
 			fulldirname, ent->d_name);
 
-		if (!(flags & FLAG_TEST)) {
+		if (!(config_flags & FLAG_TEST)) {
 		    if (rmdir(ent->d_name)) {
 			/* EBUSY is returned for a mount point. */
 			if (errno != ENOENT && errno != ENOTEMPTY
@@ -511,7 +515,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 		}
 	    }
 	} else {
-	    if (*significant_time >= killTime)
+	    if (*significant_time >= kill_time)
 		continue;
 
 #ifdef __linux
@@ -543,12 +547,12 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 	    }
 #endif
 
-	    if ((flags & FLAG_ALLFILES)
+	    if ((config_flags & FLAG_ALLFILES)
 		|| S_ISREG(sb.st_mode)
-		|| (!(flags & FLAG_NOSYMLINKS) && S_ISLNK(sb.st_mode))) {
+		|| (!(config_flags & FLAG_NOSYMLINKS) && S_ISLNK(sb.st_mode))) {
 		const struct excluded_uid *u;
 
-		if ((flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
+		if ((config_flags & FLAG_FUSER) && check_fuser(ent->d_name)) {
 		    message(LOG_VERBOSE, "file is already in use or open: %s/%s\n",
 			    fulldirname, ent->d_name);
 		    continue;
@@ -567,7 +571,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname,
 		message(LOG_VERBOSE, "removing file %s/%s\n",
 			fulldirname, ent->d_name);
 	    
-		if (!(flags & FLAG_TEST)) {
+		if (!(config_flags & FLAG_TEST)) {
 		    if (unlink(ent->d_name) && errno != ENOENT) 
 			message(LOG_ERROR, "failed to unlink %s: %s\n", 
 				fulldirname, ent->d_name);
@@ -648,8 +652,7 @@ int main(int argc, char ** argv)
 
     int grace;
     char units, garbage;
-    time_t killTime;
-    int flags = 0, orig_dir;
+    int orig_dir;
     struct stat sb;
 
     set_program_name(argv[0]);
@@ -667,25 +670,25 @@ int main(int argc, char ** argv)
 
 	switch (arg) {
 	case 'M':
-	    flags |= FLAG_DIRMTIME;
+	    config_flags |= FLAG_DIRMTIME;
 	    break;
 	case 'a':
-	    flags |= FLAG_ALLFILES;
+	    config_flags |= FLAG_ALLFILES;
 	    break;
 	case 'd':
-	    flags |= FLAG_NODIRS;
+	    config_flags |= FLAG_NODIRS;
 	    break;
 	case 'f':
-	    flags |= FLAG_FORCE;
+	    config_flags |= FLAG_FORCE;
 	    break;
 	case 'l':
-	    flags |= FLAG_NOSYMLINKS;
+	    config_flags |= FLAG_NOSYMLINKS;
 	    break;
 	case 's':
-	    flags |= FLAG_FUSER;
+	    config_flags |= FLAG_FUSER;
 	    break;
 	case 't':
-	    flags |= FLAG_TEST;
+	    config_flags |= FLAG_TEST;
 	    /* fallthrough */
 	case 'v':
 	    logLevel > 0 ? logLevel -= 1 : 0;
@@ -694,13 +697,13 @@ int main(int argc, char ** argv)
 	    logLevel = LOG_FATAL;
 	    break;
 	case 'u':
-	    flags |= FLAG_ATIME;
+	    config_flags |= FLAG_ATIME;
 	    break;
 	case 'm':
-	    flags |= FLAG_MTIME;
+	    config_flags |= FLAG_MTIME;
 	    break;
 	case 'c':
-	    flags |= FLAG_CTIME;
+	    config_flags |= FLAG_CTIME;
 	    break;
 	case 'U': {
 	    struct excluded_uid *u;
@@ -767,8 +770,8 @@ int main(int argc, char ** argv)
     }
   
     /* Default to atime if neither was specified. - alh */
-    if (!(flags & (FLAG_ATIME | FLAG_MTIME | FLAG_CTIME)))
-	flags |= FLAG_ATIME;
+    if (!(config_flags & (FLAG_ATIME | FLAG_MTIME | FLAG_CTIME)))
+	config_flags |= FLAG_ATIME;
 
     if (optind == argc) {
 	message(LOG_FATAL, "time (in hours) must be given\n");
@@ -808,7 +811,7 @@ int main(int argc, char ** argv)
 
     message(LOG_DEBUG, "grace period is %d seconds\n", grace);
 
-    killTime = time(NULL) - grace;
+    kill_time = time(NULL) - grace;
 
     /* set stdout line buffered so it is flushed before each fork */
     setvbuf(stdout, NULL, _IOLBF, 0);
@@ -830,11 +833,9 @@ int main(int argc, char ** argv)
 	    message(LOG_DEBUG, "initial directory %s is a symlink -- "
 		    "skipping\n", path);
 	} else {
-	    if (cleanupDirectory(path, path, killTime, flags, sb.st_dev,
-				 sb.st_ino) == 0) {
+	    if (cleanupDirectory(path, path, sb.st_dev, sb.st_ino) == 0)
 		message(LOG_ERROR, "cleanup failed in %s: %s\n", path,
 			strerror(errno));
-	    }
 	    if (fchdir(orig_dir) != 0) {
 		message(LOG_FATAL, "can not return to original working "
 			"directory: %s\n", strerror(errno));
