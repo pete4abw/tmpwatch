@@ -1,3 +1,8 @@
+2012-05-25  Miloslav Trmač  <mitr@redhat.com>
+
+	* bind-mount.c (bind_mount_paths_index): Remove an unused variable.
+	(is_bind_mount): Stop setting bind_mount_paths_index.
+
 2011-07-19  Miloslav Trmač  <mitr@redhat.com>
 
 	* configure.ac: Release 2.10.3.

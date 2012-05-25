@@ -289,9 +289,6 @@ static int mountinfo_fd;
 /* Known bind mount paths */
 static struct string_list bind_mount_paths; /* = { 0, }; */
 
-/* Next bind_mount_paths entry */
-static size_t bind_mount_paths_index; /* = 0; */
-
 static struct obstack bind_mount_paths_obstack;
 static void *bind_mount_paths_mark;
 
@@ -419,7 +416,6 @@ is_bind_mount(const char *path)
 	return false;
     if ((pfd.revents & POLLPRI) != 0) {
 	rebuild_bind_mount_paths();
-	bind_mount_paths_index = 0;
     }
     return bsearch(path, bind_mount_paths.entries, bind_mount_paths.len,
 		   sizeof (*bind_mount_paths.entries), cmp_string_pointer)
