@@ -1,5 +1,8 @@
 2012-05-25  Miloslav Trmač  <mitr@redhat.com>
 
+	* tmpwatch.c (check_fuser, cleanupDirectory): Remove unnecessary
+	parentheses.
+
 	* tmpwatch.c (safe_chdir, cleanupDirectory, main): Replace implicit
 	comparisions to zero with explicit comparisons.
 

@@ -248,7 +248,7 @@ check_fuser(const char *filename)
 	waitpid(pid, &ret, 0);
     }
 
-    return (WIFEXITED(ret) && (WEXITSTATUS(ret) == 0));
+    return (WIFEXITED(ret) && WEXITSTATUS(ret) == 0);
 }
 #else
 #define check_fuser(FILENAME) 0
@@ -365,16 +365,15 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	}
 	
 	/* don't go crazy with the current directory or its parent */
-	if ((strcmp(ent->d_name, ".") == 0) ||
-	    (strcmp(ent->d_name, "..") == 0))
+	if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
 	    continue;
       
 	/*
 	 * skip over directories named lost+found that are owned by
 	 * LOSTFOUND_UID (root)
 	 */
-	if ((strcmp(ent->d_name, "lost+found") == 0) &&
-	    S_ISDIR(sb.st_mode) && (sb.st_uid == LOSTFOUND_UID))
+	if (strcmp(ent->d_name, "lost+found") == 0 && S_ISDIR(sb.st_mode)
+	    && sb.st_uid == LOSTFOUND_UID)
 	    continue;
 
 	message(LOG_REALDEBUG, "found directory entry %s\n", ent->d_name);
