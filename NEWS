@@ -1,3 +1,7 @@
+2.11
+* INCOMPATIBLE CHANGE: On Linux, sockets that are certainly unused are now
+  removed by default.
+
 2.10.3
 * Don't report EACCES errors, they can be routinely returned by FUSE mounts.
 * Minor bug fixes in bind mount handling.

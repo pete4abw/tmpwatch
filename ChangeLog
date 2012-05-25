@@ -1,5 +1,8 @@
 2012-05-26  Miloslav Trmač  <mitr@redhat.com>
 
+	* configure.ac: Release 2.11.
+	* NEWS: Update.
+
 	* tmpwatch.c (FLAG_ALLFILES): Update comment.
 	(socket_kill_time): New variable, taking over FLAG_ALLFILES handling
 	for sockets.
