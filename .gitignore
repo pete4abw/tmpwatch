@@ -1,0 +1,13 @@
+*~
+/admin
+/autom4te.cache
+/lib
+/m4/*
+!/m4/gnulib-cache.m4
+/INSTALL
+/Makefile.in
+/aclocal.m4
+/configure
+/config.h.in
+
+/build
