@@ -5,11 +5,11 @@ removes files which have not been accessed in a specified period of time.
 tmpwatch is normally used to clean up directories which are used for
 temporarily holding files (for example, /tmp).
 
-New releases will be available at https://fedorahosted.org/tmpwatch/ .
+New releases will be available at https://pagure.io/tmpwatch .
 
 Bugs
 ====
 Please consider reporting the bug to your distribution's bug tracking system.
 
-Otherwise, report bugs at https://fedorahosted.org/tmpwatch/ .  Bug reports
-with patches are especially welcome.
+Otherwise, report bugs at https://pagure.io/tmpwatch .  Pull requests are
+especially welcome.
