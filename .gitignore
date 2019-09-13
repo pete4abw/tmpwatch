@@ -1,7 +1,7 @@
 *~
 /admin
 /autom4te.cache
-/lib
+#/lib
 /m4/*
 !/m4/gnulib-cache.m4
 /INSTALL

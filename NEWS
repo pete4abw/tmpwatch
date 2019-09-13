@@ -1,3 +1,8 @@
+2.11s
+* Add -S option for shred files prior to unlink.
+  Why? Some tmp files can contain sensitive information, especially in $HOME
+  folders. This gives the user an option.
+
 2.11
 * INCOMPATIBLE CHANGE: On Linux, sockets that are certainly unused are now
   removed by default.

@@ -1,3 +1,19 @@
+2019-09-09  Peter Hyman <pete@peterhyman.com>
+
+	* configure.ac: Release 2.11s (for shred)
+	* removed references to fedorahosted.org and changed to pagure.io
+	* NEWS: Update.
+	* README --> README.md
+	* Update to include description of -S
+	* update tmpwatch.8 for -S parameter.
+	* added -S command line option to shred a file before removing it.
+	* added FLAG_SHRED definition.
+	* added test_for_shred() function to determine if it exists (it
+	should!).
+	* added shredpath parameter to cleanupDirectory(...) function.
+	* added necessary directories and autofoo from v 2.11 to git
+	so tmpwatch can compile.
+
 2012-05-26  Miloslav Trmač  <mitr@redhat.com>
 
 	* configure.ac: Release 2.11.

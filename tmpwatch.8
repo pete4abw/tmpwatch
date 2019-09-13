@@ -26,10 +26,10 @@
 .SH NAME
 tmpwatch \- removes files which haven't been accessed for a period of time
 .SH SYNOPSIS
-\fBtmpwatch\fR [-u|-m|-c] [-MUXadfqstvx] [--verbose] [--force] [--all]
+\fBtmpwatch\fR [-u|-m|-c] [-MUXSadfqstvx] [--verbose] [--force] [--all]
                [--nodirs] [--nosymlinks] [--test] [--fuser] [--quiet]
                [--atime|--mtime|--ctime] [--dirmtime] [--exclude \fIpath\fR]
-               [--exclude-user \fIuser\fR] [--exclude-pattern \fIpattern\fR]
+               [--exclude-user \fIuser\fR] [--exclude-pattern \fIpattern\fR] [--shred]
                \fItime\fR \fIdirs\fR
 
 .SH DESCRIPTION
@@ -166,6 +166,11 @@ if a directory matches \fIpattern\fR,
 all files contained in it are skipped too.
 .I pattern
 must match an absolute path that contains no symbolic links.
+
+.TP
+\fB-S\fR, \fB\-\-shred\fR
+Shred files using gnu shred before removing them. Will honor
+\fB\-f\fR and \fB\-v\fR flags.
 
 .SH SEE ALSO
 .IR cron (1),

@@ -81,6 +81,7 @@
 #define FLAG_NODIRS	(1 << 7)
 #define FLAG_NOSYMLINKS (1 << 8)
 #define FLAG_DIRMTIME	(1 << 9)
+#define FLAG_SHRED	(1 <<10)
 
 /* Do not remove lost+found directories if owned by this UID */
 #define LOSTFOUND_UID 0
@@ -292,9 +293,10 @@ is_mount_point(const char *path)
 }
 #endif
 
+/* added shredpath */
 static int
 cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
-		 ino_t st_ino)
+		 ino_t st_ino, const char *shredpath)
 {
     DIR *dir;
     struct dirent *ent;
@@ -302,6 +304,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
     time_t *significant_time;
     struct utimbuf utb;
     int res;
+    int pid;
 
     message(LOG_DEBUG, "cleaning up directory %s\n", fulldirname);
 
@@ -351,7 +354,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	errno = 0;
 	ent = readdir(dir);
 	if (errno != 0) {
-	    message(LOG_ERROR, "error reading directory entry: %s\n", 
+	    message(LOG_ERROR, "error reading directory entry: %s\n",
 		    strerror(errno));
 	    (void)closedir(dir);
 	    return 0;
@@ -370,7 +373,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 	/* don't go crazy with the current directory or its parent */
 	if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
 	    continue;
-      
+
 	/*
 	 * skip over directories named lost+found that are owned by
 	 * LOSTFOUND_UID (root)
@@ -473,7 +476,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 		    strcat(full_subdir, ent->d_name);
 		    if (!is_bind_mount(full_subdir)
 			&& cleanupDirectory(full_subdir, ent->d_name, st_dev,
-					    sb.st_ino) == 0)
+					    sb.st_ino, shredpath) == 0)
 			message(LOG_ERROR, "cleanup failed in %s: %s\n",
 				full_subdir, strerror(errno));
 		    free(full_subdir);
@@ -511,7 +514,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 			/* EBUSY is returned for a mount point. */
 			if (errno != ENOENT && errno != ENOTEMPTY
 			    && errno != EBUSY) {
-			    message(LOG_ERROR, "failed to rmdir %s/%s: %s\n", 
+			    message(LOG_ERROR, "failed to rmdir %s/%s: %s\n",
 				    fulldirname, ent->d_name, strerror(errno));
 			}
 		    }
@@ -579,13 +582,50 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
                 if (u != NULL)
                     continue;
 
-		message(LOG_VERBOSE, "removing file %s/%s\n",
-			fulldirname, ent->d_name);
-	    
 		if ((config_flags & FLAG_TEST) == 0) {
-		    if (unlink(ent->d_name) != 0 && errno != ENOENT) 
-			message(LOG_ERROR, "failed to unlink %s: %s\n", 
+		    /* shred files if requested */
+		    if ((config_flags & FLAG_SHRED) != 0) {
+		        pid = fork();
+			if (pid == 0) {
+			    message(LOG_VERBOSE, "shredding file %s/%s\n",
 				fulldirname, ent->d_name);
+			    /* use shred verbosity according to logLevel */
+			    /* force file shred if required */
+			    int shredoptionsindex=0;
+			    char shredoptions[4]; /* v, f, vf or nothing*/
+			    if (logLevel < LOG_NORMAL)
+			        shredoptionsindex=1;
+			    if (config_flags & FLAG_FORCE)
+				shredoptionsindex+=2;
+
+			    switch ( shredoptionsindex ) {
+			    case 1: strcpy( shredoptions, "-v" );
+				    break;
+			    case 2: strcpy( shredoptions, "-f" );
+				    break;
+			    case 3: strcpy( shredoptions, "-vf" );
+				    break;
+			    default:
+				    break;
+			    }
+			    /* check if v or f required */
+			    if (shredoptionsindex)
+				execl( shredpath, "shred", shredoptions, ent->d_name, (char *) NULL );
+			    else
+				execl( shredpath, "shred", ent->d_name, (char *) NULL );
+
+			    /* something went wrong */
+			    message(LOG_ERROR, "shred program not found. No shredding will occur for files.\n");
+			    _exit(-1);
+			} else
+			    wait(0);
+		    }
+		    message(LOG_VERBOSE, "removing file %s/%s\n",
+			fulldirname, ent->d_name);
+
+		    if (unlink(ent->d_name) != 0 && errno != ENOENT)
+			message(LOG_ERROR, "failed to unlink %s: %s\n",
+			    fulldirname, ent->d_name);
 		}
 	    }
 	}
@@ -600,7 +640,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
     /* restore access time on this directory to its original time */
     utb.actime = here.st_atime; /* atime */
     utb.modtime = here.st_mtime; /* mtime */
-    
+
     if (utime(".", &utb) == -1)
 	message(LOG_DEBUG, "unable to reset atime/mtime for %s\n",
 		fulldirname);
@@ -622,10 +662,10 @@ printCopyright(void)
 static void attribute__((noreturn))
 usage(void)
 {
-    static const char msg[] = "tmpwatch [-u|-m|-c] [-MUXadfqtvx] [--verbose] "
+    static const char msg[] = "tmpwatch [-u|-m|-c] [-MUXSadfqtvx] [--verbose] "
 	"[--force] [--all] [--nodirs] [--nosymlinks] [--test] [--quiet] "
 	"[--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] "
-	"[--exclude-user <user>] [--exclude-pattern <pattern>] "
+	"[--exclude-user <user>] [--exclude-pattern <pattern>] [--shred ]"
 #ifdef FUSER
 	"[--fuser] "
 #endif
@@ -683,6 +723,37 @@ compute_kill_times(int grace_minutes)
     }
 }
 
+/* return fullpath if shred application found
+ * return NULL if not */
+static char * test_for_shred( void )
+{
+	/* check for shred existence along path
+	 * then check if executable */
+	char *path;
+	char *curpath;
+	char *fullpath=NULL;
+	int accessstatus;
+
+	path = getenv("PATH");
+	if (path == NULL) return(0);
+
+	curpath=strtok(path, ":");
+
+	while ( curpath != NULL ) {
+	    if ( (fullpath=xmalloc(strlen(curpath) + 7)) == NULL )
+	        message(LOG_FATAL, "error allocating memory\n.");
+	    strcpy(fullpath,curpath);
+	    strcat(fullpath, "/shred");
+	    if ( (accessstatus=access( fullpath, X_OK) ) == 0 )
+		/* found shred */
+		break;
+	    free(fullpath);
+	    fullpath=NULL;
+	    curpath=strtok(NULL, ":");
+	}
+
+	return( fullpath );
+}
 
 int main(int argc, char ** argv)
 {
@@ -704,14 +775,16 @@ int main(int argc, char ** argv)
 	{ "verbose", 0, 0, 'v' },
 	{ "exclude", required_argument, 0, 'x' },
 	{ "exclude-pattern", required_argument, 0, 'X' },
+	{ "shred", 0, 0, 'S' },
 	{ 0, 0, 0, 0 },
     };
-    const char optstring[] = "MU:acdflmqstuvx:X:";
+    const char optstring[] = "MU:acdflmqstuvx:X:S";
 
     int grace;
     char units, garbage;
     int orig_dir;
     struct stat sb;
+    char *shredpath=NULL; /* placeholder for shred executable, if requested */
 
     set_program_name(argv[0]);
     if (argc == 1) usage();
@@ -821,12 +894,20 @@ int main(int argc, char ** argv)
 	    excluded_patterns_tail = &p->next;
 	    break;
 	}
+	case 'S': {
+	    /* shred files */
+	    if ( (shredpath=test_for_shred()) !=NULL )
+	        config_flags |= FLAG_SHRED;
+	    else
+		message(LOG_ERROR, "shred application not found. No file shredding will occur.\n");
+	    break;
+	}
 	case '?':
 	default:
 	    usage();
 	}
     }
-  
+
     /* Default to atime if neither was specified. - alh */
     if ((config_flags & (FLAG_ATIME | FLAG_MTIME | FLAG_CTIME)) == 0)
 	config_flags |= FLAG_ATIME;
@@ -887,7 +968,8 @@ int main(int argc, char ** argv)
 	    message(LOG_DEBUG, "initial directory %s is a symlink -- "
 		    "skipping\n", path);
 	} else {
-	    if (cleanupDirectory(path, path, sb.st_dev, sb.st_ino) == 0)
+	    /* add shred path to call */
+	    if (cleanupDirectory(path, path, sb.st_dev, sb.st_ino, shredpath) == 0)
 		message(LOG_ERROR, "cleanup failed in %s: %s\n", path,
 			strerror(errno));
 	    if (fchdir(orig_dir) != 0) {
