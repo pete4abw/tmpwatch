@@ -1,13 +1,11 @@
 /* xmalloc.c -- malloc with out of memory checking
 
-   Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2002, 2003, 2004, 2005, 2006 Free Software Foundation,
-   Inc.
+   Copyright (C) 1990-2000, 2002-2006, 2008-2019 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
+   This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
-   any later version.
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,28 +13,21 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
-#if ! HAVE_INLINE
-# define static_inline
-#endif
+#define XALLOC_INLINE _GL_EXTERN_INLINE
+
 #include "xalloc.h"
-#undef static_inline
 
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef SIZE_MAX
-# define SIZE_MAX ((size_t) -1)
-#endif
-
 /* 1 if calloc is known to be compatible with GNU calloc.  This
    matters if we are not also using the calloc module, which defines
-   HAVE_CALLOC and supports the GNU API even on non-GNU platforms.  */
-#if defined HAVE_CALLOC || defined __GLIBC__
+   HAVE_CALLOC_GNU and supports the GNU API even on non-GNU platforms.  */
+#if defined HAVE_CALLOC_GNU || (defined __GLIBC__ && !defined __UCLIBC__)
 enum { HAVE_GNU_CALLOC = 1 };
 #else
 enum { HAVE_GNU_CALLOC = 0 };
@@ -59,8 +50,16 @@ xmalloc (size_t n)
 void *
 xrealloc (void *p, size_t n)
 {
+  if (!n && p)
+    {
+      /* The GNU and C99 realloc behaviors disagree here.  Act like
+         GNU, even if the underlying realloc is C99.  */
+      free (p);
+      return NULL;
+    }
+
   p = realloc (p, n);
-  if (!p && n != 0)
+  if (!p && n)
     xalloc_die ();
   return p;
 }
@@ -94,11 +93,11 @@ void *
 xcalloc (size_t n, size_t s)
 {
   void *p;
-  /* Test for overflow, since some calloc implementations don't have
-     proper overflow checks.  But omit overflow and size-zero tests if
-     HAVE_GNU_CALLOC, since GNU calloc catches overflow and never
-     returns NULL if successful.  */
-  if ((! HAVE_GNU_CALLOC && xalloc_oversized (n, s))
+  /* Test for overflow, since objects with size greater than
+     PTRDIFF_MAX cause pointer subtraction to go awry.  Omit size-zero
+     tests if HAVE_GNU_CALLOC, since GNU calloc never returns NULL if
+     successful.  */
+  if (xalloc_oversized (n, s)
       || (! (p = calloc (n, s)) && (HAVE_GNU_CALLOC || n != 0)))
     xalloc_die ();
   return p;

@@ -1,8 +1,16 @@
 To set up a build environment from this repository, run:
-	mkdir $gldir; cd $gldir
-	git clone git://git.savannah.gnu.org/gnulib.git
-	git checkout 5861339993f3014cfad1b94fc7fe366fc2573598
-	cd $tmpwatch_dir
-	$gldir/gnulib/gnulib-tool --import
-	hg revert --all
-	autoreconf -is
+
+$./autogen.sh
+
+or
+
+$NOCONFIGURE=1 ./autogen.sh
+
+or to update the gnulib to the latest files then
+
+git clone https://git.savannah.gnu.org/gnulib.git
+
+change to tmpwatch directory
+run [gnulib] directory/gnulib/gnulib-tool --import
+
+then ./autogen.sh as above.

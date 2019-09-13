@@ -1,7 +1,9 @@
 2019-09-13  Peter Hyman
 
-	* update configure.ac to ignore missing README
-	* add m4 and lib files from gnulib for easy compile
+	* update configure.ac to ignore missing README.
+	* add m4 and lib files from gnulib for easy compile.
+	* added lib for current gnulib.
+	* update HACKING for current information.
 	
 2019-09-09  Peter Hyman <pete@peterhyman.com>
 
