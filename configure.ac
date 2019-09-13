@@ -5,7 +5,7 @@ AC_PREREQ([2.63b])
 AC_CONFIG_SRCDIR([tmpwatch.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_AUX_DIR([admin])
-AM_INIT_AUTOMAKE([dist-bzip2 no-define -Wall])
+AM_INIT_AUTOMAKE([dist-bzip2 no-define -Wall foreign])
 
 # Checks for programs.
 AC_PROG_CC
