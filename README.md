@@ -1,6 +1,15 @@
 TMPWATCH
 ========
 
+Fetching and Building
+---------------------
+
+gnulib is fetched recursively as a submodule in this release.
+
+git clone --recursive **[git location]**
+
+./autogen.sh **[configure options]**
+
 About
 -----
 The tmpwatch utility recursively searches through specified directories and

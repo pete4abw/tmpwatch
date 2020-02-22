@@ -15,8 +15,3 @@ dist_man8_MANS = tmpwatch.8
 tmpwatch_SOURCES = bind-mount.c bind-mount.h tmpwatch.c
 tmpwatch_LDADD = lib/libgnu.a $(LIBINTL) $(LIB_CLOCK_GETTIME)
 
-force-tag:
-	cd $(top_srcdir); hg tag -f $(HGTAG)
-
-tag:
-	cd $(top_srcdir); hg tag $(HGTAG)

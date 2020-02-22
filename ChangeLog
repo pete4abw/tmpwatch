@@ -1,3 +1,10 @@
+2020-02-22  Peter Hyman
+
+	* Add submodule git://git.savannah.gnu.org/gnulib
+	* Autogen.sh will fetch automatically
+	* Add BUILD doc
+	* Remove hg tags since we're using git
+
 2019-09-13  Peter Hyman
 
 	* update configure.ac to ignore missing README
