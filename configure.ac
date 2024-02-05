@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT([tmpwatch], [2.11s], [https://pagure.io/tmpwatch/], ,
+AC_INIT([tmpwatch], [2.12], [https://pagure.io/tmpwatch/], ,
         [https://pagure.io/tmpwatch/])
 AC_PREREQ([2.64])
 AC_CONFIG_SRCDIR([tmpwatch.c])
