@@ -7,7 +7,7 @@ if [ ! -x gnulib/gnulib-tool ] ; then
 fi
 
 echo "Fetching gnulib modules"
-gnulib/gnulib-tool --import --dir=. --lib=libgnu --source-base=lib --m4-base=m4 --doc-base=doc --aux-dir=admin --no-libtool --macro-prefix=gl clock-time getopt progname stpcpy strtoimax xalloc
+gnulib/gnulib-tool --import --dir=. --lib=libgnu --source-base=lib --m4-base=m4 --doc-base=doc --aux-dir=admin --no-libtool --macro-prefix=gl clock-time getopt-gnu progname stpcpy strtoimax xalloc
 
 echo 'Running autoreconf -if...'
 autoreconf -if || exit 1
