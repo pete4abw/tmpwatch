@@ -1,11 +1,19 @@
-2020-02-22  Peter Hyman
+2024-02-05  Peter Hyman <pete@peterhyman.com>
+
+	* Update gnulib submodule head
+	* Update autogen.sh to fetch getopt-gnu package instead
+	of getopt
+	* Minor manpage update
+	* Update configure.ac AC_PREREQ to 2.64 autotools
+
+2020-02-22  Peter Hyman <pete@peterhyman.com>
 
 	* Add submodule git://git.savannah.gnu.org/gnulib
 	* Autogen.sh will fetch automatically
 	* Add BUILD doc
 	* Remove hg tags since we're using git
 
-2019-09-13  Peter Hyman
+2019-09-13  Peter Hyman <pete@peterhyman.com>
 
 	* update configure.ac to ignore missing README
 	* add m4 and lib files from gnulib for easy compile
