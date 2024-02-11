@@ -218,6 +218,7 @@ safe_chdir(const char *fulldirname, const char *reldirname, dev_t st_dev,
     return 0;
 }
 
+/* check user function returns 0 if OK, 1 if file in use */
 #ifdef FUSER
 static int
 check_fuser(const char *filename)
@@ -225,7 +226,8 @@ check_fuser(const char *filename)
     static int fuser_exists = -1;
     static char *const empty_environ[] = { NULL };
 
-    int ret;
+    int ret = 0;			/* assume no file in use */
+    int wstatus;			/* store return from waitpid */
     char dir[2 + PATH_MAX];
     int pid;
 
@@ -249,10 +251,20 @@ check_fuser(const char *filename)
 #endif
 	_exit(127);
     } else {
-	waitpid(pid, &ret, 0);
+	waitpid(pid, &wstatus, 0);
     }
 
-    return (WIFEXITED(ret) && WEXITSTATUS(ret) == 0);
+    /* assume return is 0 */
+    /* Even if a file is in use, WIFEXITED can still return a normal termiination */
+    if (WIFEXITED(wstatus))		/* child returned normally */
+    {
+        if (! WEXITSTATUS(wstatus))	/* if some error returned */
+	    ret = 1;
+    } else
+	ret = 1;			/* abnormal exit for child */
+
+    return ret;
+
 }
 #else
 #define check_fuser(FILENAME) 0
