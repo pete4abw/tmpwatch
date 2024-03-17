@@ -2,16 +2,12 @@
 
 ## Settings
 ACLOCAL_AMFLAGS = -I m4
-AM_CPPFLAGS = -I$(top_builddir)/lib -I$(top_srcdir)/lib
-HGTAG = 'tmpwatch-$(VERSION)'
-
-## Targets
-SUBDIRS = lib
+# AM_CPPFLAGS = 
 
 sbin_PROGRAMS = tmpwatch
 dist_man8_MANS = tmpwatch.8
 
 ## Rules
 tmpwatch_SOURCES = bind-mount.c bind-mount.h tmpwatch.c
-tmpwatch_LDADD = lib/libgnu.a $(LIBINTL) $(LIB_CLOCK_GETTIME)
+tmpwatch_LDADD = $(LIBINTL) $(LIB_CLOCK_GETTIME)
 

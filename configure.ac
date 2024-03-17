@@ -1,41 +1,20 @@
+#                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-AC_INIT([tmpwatch], [2.12], [https://pagure.io/tmpwatch/], ,
-        [https://pagure.io/tmpwatch/])
+
 AC_PREREQ([2.64])
+AC_INIT([tmpwatch], [2.13], [pete@peterhyman.com])
 AC_CONFIG_SRCDIR([tmpwatch.c])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_AUX_DIR([admin])
-AM_INIT_AUTOMAKE([dist-bzip2 no-define -Wall foreign])
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CC
-gl_EARLY
-AC_PROG_RANLIB
-
-gl_INIT
 
 # Checks for libraries.
 
-# Checks for header files.
-AC_CHECK_HEADERS([mntent.h paths.h])
-
-# Checks for header files.
-
-# Checks for types.
-
-# Checks for structures.
-
-# Checks for compiler characteristics.
-
-# Checks for library functions.
-AC_FUNC_GETMNTENT
-
-# Checks for system services.
-AC_SYS_LARGEFILE
-
 AC_ARG_WITH([fuser],
-	AS_HELP_STRING([--with-fuser=PATH_TO_FUSER],
-		       [full path to fuser or "no" (search PATH by default)]),
+       AS_HELP_STRING([--with-fuser=PATH_TO_FUSER],
+                      [full path to fuser or "no" (search PATH by default)]),
 [case "$withval" in
       no) FUSER='' ;;
       /* | yes) FUSER=$withval ;;
@@ -43,7 +22,7 @@ AC_ARG_WITH([fuser],
 esac], [FUSER=yes])
 if test "$FUSER" = yes; then
    AC_PATH_PROG([FUSER], [fuser], [],
-      		[$PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin])
+               [$PATH$PATH_SEPARATOR/usr/sbin$PATH_SEPARATOR/sbin])
 fi
 AC_ARG_VAR([FUSER], [Path to fuser])
 AC_MSG_CHECKING([whether to use fuser])
@@ -60,41 +39,33 @@ else
       AC_MSG_CHECKING([whether fuser supports -s])
       $FUSER -s / >/dev/null 2>&1
       if test $? -eq 0; then
-      	 AC_MSG_RESULT([yes])
-	 AC_DEFINE([FUSER_ACCEPTS_S], [1], [Define to 1 if fuser supports -s.])
+        AC_MSG_RESULT([yes])
+        AC_DEFINE([FUSER_ACCEPTS_S], [1], [Define to 1 if fuser supports -s.])
       else
-      	 AC_MSG_RESULT([no])
+        AC_MSG_RESULT([no])
       fi
    fi
 fi
 
-# Miscellanous hackery.
+# Checks for header files.
+AC_CHECK_HEADERS([fcntl.h inttypes.h mntent.h obstack.h paths.h sys/time.h unistd.h utime.h])
 
-# Modify CFLAGS after all tests are run (some of them would fail because
-# of the -Werror).
-if test "$GCC" = yes ; then
-    AC_CACHE_CHECK([for available GCC warning flags],
-		   [mitr_cv_prog_gcc_warnings],
-    [mitr_cv_prog_gcc_warnings=""
-    for i in -Wall -W -Wcast-align -Wmissing-noreturn -Wnested-externs -Wpointer-arith dnl
- -Wshadow -Wstrict-prototypes -Wwrite-strings; do
-        oldcflags=$CFLAGS
-        CFLAGS="$CFLAGS $i"
-        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [])],
-		[mitr_cv_prog_gcc_warnings="$mitr_cv_prog_gcc_warnings $i"])
-	CFLAGS=$oldcflags
-     done])
-     CFLAGS="$CFLAGS $mitr_cv_prog_gcc_warnings"
-     AC_MSG_CHECKING([whether we should use -Werror])
-     AC_ARG_ENABLE([Werror],
-		   AS_HELP_STRING([--enable-Werror],
-			[use -Werror if compiling with gcc (default is NO)]),
-		   [], enable_Werror=no)
-     if test "x$enable_Werror" != xno; then
-	CFLAGS="$CFLAGS -Werror"
-     fi
-     AC_MSG_RESULT([$enable_Werror])
-fi
+# Check for system services
+AC_SYS_LARGEFILE
 
-AC_CONFIG_FILES([Makefile lib/Makefile])
+# Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+AC_FUNC_OBSTACK
+AC_TYPE_SIZE_T
+AC_TYPE_UID_T
+
+# Checks for library functions.
+AC_FUNC_FORK
+AC_FUNC_GETMNTENT
+AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_CHECK_FUNCS([clock_gettime fchdir getmntent realpath rmdir stpcpy strdup strerror strrchr utime])
+
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
