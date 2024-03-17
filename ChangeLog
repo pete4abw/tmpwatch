@@ -1,3 +1,7 @@
+2024-03-15  Peter Hyman <pete@peterhyman.com>
+	* Remove gnulib submodule and its functions. Notably x*alloc,
+	xstr*, x2nrealloc, set_program_name.
+
 2024-02-11  Peter Hyman <pete@peterhyman.com>
 	* Update check_fuser() so that it properly returns status
 	when a file may be is use. Only applies if the -s | --fuser
