@@ -2,6 +2,7 @@
  * tmpwatch.c -- remove files in a directory, but do it carefully.
  *
  * Copyright (C) 1997-2001, 2004-2009 Red Hat, Inc.  All rights reserved.
+ * Copyright (C) 2019-2024 Peter Hyman
  *
  * This copyrighted material is made available to anyone wishing to use,
  * modify, copy, or redistribute it subject to the terms and conditions of the
@@ -50,9 +51,6 @@
 #ifdef HAVE_PATHS_H
 #include <paths.h>
 #endif
-
-#include "progname.h"
-#include "xalloc.h"
 
 #include "bind-mount.h"
 
@@ -154,7 +152,7 @@ absolute_path(const char *path, int allow_nonexistent)
 	    message(LOG_FATAL, "cannot resolve %s: %s\n", path,
 		    strerror(errno));
     }
-    return xstrdup(src);
+    return strdup(src);
 }
 
 /* Returns 0 if OK, 2 on ENOENT, 1 on other errors */
@@ -666,6 +664,7 @@ printCopyright(void)
     fprintf(stderr, "tmpwatch " PACKAGE_VERSION
 	    " - (C) 1997-2009 Red Hat, Inc. "
 	    "All rights reserved.\n"
+	    "2019-2024 Peter Hyman.\n"
 	    "This program may be freely redistributed under the terms of the\n"
 	    "GNU General Public License version 2.\n");
 }
@@ -752,7 +751,7 @@ static char * test_for_shred( void )
 	curpath=strtok(path, ":");
 
 	while ( curpath != NULL ) {
-	    if ( (fullpath=xmalloc(strlen(curpath) + 7)) == NULL )
+	    if ( (fullpath=malloc(strlen(curpath) + 7)) == NULL )
 	        message(LOG_FATAL, "error allocating memory\n.");
 	    strcpy(fullpath,curpath);
 	    strcat(fullpath, "/shred");
@@ -798,7 +797,7 @@ int main(int argc, char ** argv)
     struct stat sb;
     char *shredpath=NULL; /* placeholder for shred executable, if requested */
 
-    set_program_name(argv[0]);
+    // set_program_name(argv[0]);
     if (argc == 1) usage();
 
     bind_mount_init();
@@ -852,7 +851,8 @@ int main(int argc, char ** argv)
 	    struct excluded_uid *u;
 	    struct passwd *pwd;
 
-	    u = xmalloc(sizeof (*u));
+	    if ( (u = malloc(sizeof (*u))) == NULL )
+	        message(LOG_FATAL, "error allocating memory\n.");
 	    pwd = getpwnam(optarg);
 	    if (pwd != NULL)
 	        u->uid = pwd->pw_uid;
@@ -876,7 +876,8 @@ int main(int argc, char ** argv)
 	    struct exclusion *e;
 	    char *path, *p;
 
-	    e = xmalloc(sizeof (*e));
+	    if ( (e = malloc(sizeof (*e))) == NULL )
+	        message(LOG_FATAL, "error allocating memory\n.");
 	    path = absolute_path(optarg, 1);
 	    if (*path != '/') {
 		message(LOG_ERROR, "%s is not an absolute path\n", path);
@@ -899,7 +900,8 @@ int main(int argc, char ** argv)
 	case 'X': {
 	    struct excluded_pattern *p;
 
-	    p = xmalloc(sizeof (*p));
+	    if ( (p = malloc(sizeof (*p))) == NULL )
+	        message(LOG_FATAL, "error allocating memory\n.");
 	    p->pattern = optarg;
 	    p->next = NULL;
 	    *excluded_patterns_tail = p;

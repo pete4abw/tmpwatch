@@ -32,21 +32,23 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-
-#include "obstack.h"
-#include "xalloc.h"
-
+#include <obstack.h>
 #include "bind-mount.h"
 
 #define MOUNTINFO_PATH "/proc/self/mountinfo"
 
- /* Utilities */
+/* Utilities */
 
 /* Used by obstack code */
 struct _obstack_chunk *
 obstack_chunk_alloc(long size)
 {
-    return xmalloc(size);
+    struct _obstack_chunk *p = malloc(size);
+    if (p == NULL) {
+	fprintf(stderr,"error allocating obstruct memory\n");
+	exit(1);
+    }
+    return p;
 }
 #define obstack_chunk_free free
 
@@ -70,10 +72,9 @@ static void
 string_list_append(struct string_list *list, char *string)
 {
     if (list->allocated == list->len)
-	list->entries = x2nrealloc(list->entries, &list->allocated,
+	list->entries = reallocarray(list->entries, ++list->allocated,
 				   sizeof (*list->entries));
-    list->entries[list->len] = string;
-    list->len++;
+    list->entries[list->len++] = string;
 }
 
  /* MOUNTINFO_PATH handling */
