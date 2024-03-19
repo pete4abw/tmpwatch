@@ -47,6 +47,12 @@ else
    fi
 fi
 
+# Check for shred
+AC_PATH_PROG([SHRED],[shred],[],[$PATH])
+if test "x$SHRED" != x; then
+   AC_DEFINE_UNQUOTED([SHRED], ["$SHRED"], [Path to shred])
+fi
+
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h inttypes.h mntent.h obstack.h paths.h sys/time.h unistd.h utime.h])
 
