@@ -322,7 +322,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
     switch (res) {
     case 0: /* OK */
 	break;
-	
+
     case 1: /* Error */
 	return 0;
 
@@ -379,7 +379,7 @@ cleanupDirectory(const char * fulldirname, const char *reldirname, dev_t st_dev,
 			fulldirname, ent->d_name, strerror(errno));
 	    continue;
 	}
-	
+
 	/* don't go crazy with the current directory or its parent */
 	if (strcmp(ent->d_name, ".") == 0 || strcmp(ent->d_name, "..") == 0)
 	    continue;
@@ -673,10 +673,21 @@ printCopyright(void)
 static void attribute__((noreturn))
 usage(void)
 {
-    static const char msg[] = "tmpwatch [-u|-m|-c] [-MUXSadfqtvx] [--verbose] "
+    static const char msg[] = "tmpwatch [-u|-m|-c] [-MUX"
+#ifdef SHRED
+	"S"
+#endif	
+	"adfq"
+#ifdef FUSER
+	"s"
+#endif	
+	"tvx] [--verbose] "
 	"[--force] [--all] [--nodirs] [--nosymlinks] [--test] [--quiet] "
 	"[--atime|--mtime|--ctime] [--dirmtime] [--exclude <path>] "
-	"[--exclude-user <user>] [--exclude-pattern <pattern>] [--shred ]"
+	"[--exclude-user <user>] [--exclude-pattern <pattern>] "
+#ifdef SHRED
+	"[--shred] "
+#endif
 #ifdef FUSER
 	"[--fuser] "
 #endif
@@ -734,38 +745,6 @@ compute_kill_times(int grace_minutes)
     }
 }
 
-/* return fullpath if shred application found
- * return NULL if not */
-static char * test_for_shred( void )
-{
-	/* check for shred existence along path
-	 * then check if executable */
-	char *path;
-	char *curpath;
-	char *fullpath=NULL;
-	int accessstatus;
-
-	path = getenv("PATH");
-	if (path == NULL) return(0);
-
-	curpath=strtok(path, ":");
-
-	while ( curpath != NULL ) {
-	    if ( (fullpath=malloc(strlen(curpath) + 7)) == NULL )
-	        message(LOG_FATAL, "error allocating memory\n.");
-	    strcpy(fullpath,curpath);
-	    strcat(fullpath, "/shred");
-	    if ( (accessstatus=access( fullpath, X_OK) ) == 0 )
-		/* found shred */
-		break;
-	    free(fullpath);
-	    fullpath=NULL;
-	    curpath=strtok(NULL, ":");
-	}
-
-	return( fullpath );
-}
-
 int main(int argc, char ** argv)
 {
     static const struct option options[] = {
@@ -786,16 +765,31 @@ int main(int argc, char ** argv)
 	{ "verbose", 0, 0, 'v' },
 	{ "exclude", required_argument, 0, 'x' },
 	{ "exclude-pattern", required_argument, 0, 'X' },
+#ifdef SHRED
 	{ "shred", 0, 0, 'S' },
+#endif
 	{ 0, 0, 0, 0 },
     };
-    const char optstring[] = "MU:acdflmqstuvx:X:S";
+    char *optstring = calloc(19,1);
+    if (optstring == NULL)
+        message(LOG_FATAL,"cannot allocated optstring.\n");
+    strcpy(optstring, "MU:acdflmqtuvx:X:");
+    /* add option strings for FUSER and SHRED. Otherwise options ignored */
+    int idx=strlen(optstring);
+    #ifdef FUSER
+        optstring[idx++] = 's';
+    #endif
+    #ifdef SHRED
+	optstring[idx] = 'S';
+    #endif
+fprintf(stdout,"%s\n",optstring);
+
 
     int grace;
     char units, garbage;
     int orig_dir;
     struct stat sb;
-    char *shredpath=NULL; /* placeholder for shred executable, if requested */
+    char *shredpath = NULL;
 
     // set_program_name(argv[0]);
     if (argc == 1) usage();
@@ -910,10 +904,10 @@ int main(int argc, char ** argv)
 	}
 	case 'S': {
 	    /* shred files */
-	    if ( (shredpath=test_for_shred()) !=NULL )
+	    #ifdef SHRED
 	        config_flags |= FLAG_SHRED;
-	    else
-		message(LOG_ERROR, "shred application not found. No file shredding will occur.\n");
+		shredpath = SHRED;
+	    #endif
 	    break;
 	}
 	case '?':
