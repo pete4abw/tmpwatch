@@ -36,8 +36,8 @@ especially welcome.
 
 THIS RELEASE, 2.13
 ===================
-2024. Removal of gnulib functions.
-2019. Updates the program to include shredding capabilities.
+2024 Removal of gnulib functions.\
+2019 Updates the program to include shredding capabilities.
 
 Peter Hyman
 pete@peterhyman.com
